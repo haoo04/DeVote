@@ -11,6 +11,7 @@
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/web3-provider": "^1.8.0",
     "antd": "^5.26.3",
+    "dotenv": "^17.0.1",
     "ethers": "^6.15.0",
     "hardhat": "^2.25.0",
     "lucide-react": "^0.525.0",

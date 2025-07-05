@@ -8,11 +8,16 @@
 /* 布局调整 */
 .ant-layout {
   min-height: 100vh;
+  position: relative;
+}
+
+.ant-layout-has-sider {
+  position: relative;
 }
 
 .ant-layout-header {
   position: fixed;
-  z-index: 1000;
+  z-index: 1002;
   width: 100%;
   height: 64px;
   line-height: 64px;
@@ -29,19 +34,90 @@
   min-height: calc(100vh - 64px);
   padding: 24px;
   transition: margin-left 0.2s;
+  position: relative;
+  z-index: 1;
+}
+
+/* 当侧边栏折叠时调整内容区域 */
+.ant-layout-has-sider .ant-layout-content {
+  margin-left: 256px;
+}
+
+.ant-layout-sider-collapsed + .ant-layout .ant-layout-content {
+  margin-left: 80px;
 }
 
 /* 响应式布局 */
 @media (max-width: 768px) {
   .ant-layout-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     padding: 16px;
   }
   
   .ant-layout-sider {
     position: fixed;
-    height: 100vh;
-    z-index: 999;
+    height: calc(100vh - 64px);
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .ant-layout-sider:not(.ant-layout-sider-collapsed) {
+    transform: translateX(0);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
+  }
+  
+  /* 移动端遮罩层 */
+  .mobile-overlay {
+    display: block !important;
+  }
+  
+  /* 移动端隐藏一些元素 */
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  /* 当侧边栏打开时防止主体滚动 */
+  .ant-layout-sider:not(.ant-layout-sider-collapsed) ~ .ant-layout {
+    overflow: hidden;
+  }
+  
+  /* 调整内容布局以适应小屏幕 */
+  .ant-layout-content {
+    overflow-x: hidden;
+  }
+}
+
+/* 平板端适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ant-layout-content {
+    padding: 20px;
+  }
+  
+  .mobile-overlay {
+    display: none !important;
+  }
+  
+  /* 平板端头部优化 */
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  /* 平板端表格和卡片优化 */
+  .ant-card {
+    margin-bottom: 16px;
+  }
+  
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+/* 桌面端隐藏遮罩层 */
+@media (min-width: 1025px) {
+  .mobile-overlay {
+    display: none !important;
   }
 }
 
@@ -51,11 +127,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: none;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .ant-card:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
+  z-index: 2;
 }
 
 .ant-card-head {
@@ -118,6 +197,8 @@
   border-radius: 8px;
   border: 2px solid #f0f2f5;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .ant-input:focus,
@@ -128,11 +209,20 @@
 .ant-picker-focused {
   border-color: #1890ff;
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+  z-index: 2;
 }
 
 /* 模态框样式 */
 .ant-modal {
   border-radius: 12px;
+}
+
+.ant-modal-mask {
+  z-index: 1050;
+}
+
+.ant-modal-wrap {
+  z-index: 1050;
 }
 
 .ant-modal-header {
@@ -143,6 +233,29 @@
 .ant-modal-footer {
   border-top: 2px solid #f0f2f5;
   border-radius: 0 0 12px 12px;
+}
+
+/* 下拉菜单样式 */
+.ant-dropdown {
+  z-index: 1030;
+}
+
+.ant-select-dropdown {
+  z-index: 1030;
+}
+
+.ant-picker-dropdown {
+  z-index: 1030;
+}
+
+/* 消息提示样式 */
+.ant-message {
+  z-index: 1060;
+}
+
+/* 通知样式 */
+.ant-notification {
+  z-index: 1060;
 }
 
 /* 列表样式 */
@@ -367,6 +480,25 @@
   .ant-statistic {
     text-align: left;
   }
+  
+  /* 小屏幕下的表格滚动 */
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+  
+  /* 小屏幕下的表单布局 */
+  .ant-form-item {
+    margin-bottom: 16px;
+  }
+  
+  /* 小屏幕下的按钮组 */
+  .ant-btn-group {
+    flex-direction: column;
+  }
+  
+  .ant-btn-group .ant-btn {
+    margin-bottom: 8px;
+  }
 }
 
 /* 滚动条样式 */
@@ -391,6 +523,38 @@
 /* 过渡动画 */
 * {
   transition: all 0.3s ease;
+}
+
+/* 确保内容区域正确显示 */
+.ant-layout-content {
+  position: relative;
+  z-index: 1;
+  overflow-x: hidden;
+}
+
+/* 确保侧边栏在移动端正确显示 */
+@media (max-width: 768px) {
+  .ant-layout-sider {
+    top: 64px;
+    left: 0;
+    width: 256px !important;
+  }
+  
+  .ant-layout-sider-collapsed {
+    width: 0 !important;
+    transform: translateX(-100%);
+  }
+  
+  /* 确保内容区域在移动端正确显示 */
+  .ant-layout-content {
+    width: 100%;
+    padding: 16px;
+  }
+  
+  /* 防止水平滚动 */
+  body {
+    overflow-x: hidden;
+  }
 }
 
 /* 特殊的渐变文字 */

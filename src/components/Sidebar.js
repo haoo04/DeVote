@@ -123,11 +123,12 @@ const Sidebar = ({ collapsed }) => {
       width={256}
       style={{
         overflow: 'auto',
-        height: '100vh',
+        height: 'calc(100vh - 64px)',
         position: 'fixed',
         left: 0,
         top: 64, // Header高度
         bottom: 0,
+        zIndex: 1001, // 确保在其他内容之上
       }}
     >
       <div style={{ height: '100%', borderRight: 0 }}>

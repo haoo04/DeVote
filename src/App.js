@@ -21,6 +21,25 @@ const { Content } = Layout;
 function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width <= 768);
+      
+      if (width <= 768) {
+        setCollapsed(true); // 移动端默认折叠
+      } else if (width > 768 && width <= 1024) {
+        // 平板端可以选择性折叠
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // 初始化
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -53,7 +72,28 @@ function App() {
             <Layout>
               <Sidebar collapsed={collapsed} />
               
-              <Layout style={{ padding: '24px 24px 24px' }}>
+              {/* 移动端遮罩层 */}
+              {isMobile && !collapsed && (
+                <div 
+                  className="mobile-overlay"
+                  style={{
+                    position: 'fixed',
+                    top: 64,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.45)',
+                    zIndex: 1000
+                  }}
+                  onClick={toggleSidebar}
+                />
+              )}
+              
+              <Layout style={{ 
+                padding: '24px 24px 24px',
+                marginLeft: isMobile ? '0' : (collapsed ? '80px' : '256px'),
+                transition: 'margin-left 0.2s'
+              }}>
                 <Content
                   style={{
                     padding: 24,
