@@ -29,6 +29,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { optimizedSelectProps } from '../utils/errorHandler';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -307,7 +308,7 @@ const VoteList = () => {
       </div>
 
       {/* 筛选和搜索 */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card style={{ marginBottom: 24, position: 'relative', zIndex: 10 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={8}>
             <Input
@@ -316,6 +317,7 @@ const VoteList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               allowClear
+              style={{ position: 'relative', zIndex: 1 }}
             />
           </Col>
           <Col xs={12} sm={6} md={4}>
@@ -324,6 +326,7 @@ const VoteList = () => {
               value={statusFilter}
               onChange={setStatusFilter}
               style={{ width: '100%' }}
+              {...optimizedSelectProps}
             >
               <Option value="all">全部状态</Option>
               <Option value="active">进行中</Option>
@@ -337,6 +340,7 @@ const VoteList = () => {
               value={typeFilter}
               onChange={setTypeFilter}
               style={{ width: '100%' }}
+              {...optimizedSelectProps}
             >
               <Option value="all">全部类型</Option>
               <Option value="single">单选投票</Option>

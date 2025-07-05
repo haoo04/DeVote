@@ -269,7 +269,10 @@ const CreateVote = () => {
                     label="投票类型"
                     rules={[{ required: true }]}
                   >
-                    <Select>
+                    <Select 
+                      virtual={false}
+                      dropdownStyle={{ zIndex: 1050 }}
+                    >
                       <Option value="single">单选投票</Option>
                       <Option value="multiple">多选投票</Option>
                     </Select>
@@ -281,7 +284,10 @@ const CreateVote = () => {
                     label="权限设置"
                     rules={[{ required: true }]}
                   >
-                    <Select>
+                    <Select 
+                      virtual={false}
+                      dropdownStyle={{ zIndex: 1050 }}
+                    >
                       <Option value="public">公开投票</Option>
                       <Option value="private">私有投票</Option>
                       <Option value="token">代币持有者</Option>
@@ -299,6 +305,8 @@ const CreateVote = () => {
                   showTime 
                   style={{ width: '100%' }}
                   placeholder={['开始时间', '结束时间']}
+                  dropdownClassName="vote-time-picker"
+                  getPopupContainer={trigger => trigger.parentNode}
                 />
               </Form.Item>
 

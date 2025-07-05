@@ -241,11 +241,60 @@
 }
 
 .ant-select-dropdown {
-  z-index: 1030;
+  z-index: 1050 !important;
 }
 
 .ant-picker-dropdown {
-  z-index: 1030;
+  z-index: 1050 !important;
+}
+
+.vote-time-picker .ant-picker-dropdown {
+  z-index: 1050 !important;
+}
+
+/* 确保所有选择器下拉框正确显示 */
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-cascader-dropdown,
+.ant-tooltip,
+.ant-popover {
+  z-index: 1050 !important;
+}
+
+/* 优化Select组件性能，减少ResizeObserver错误 */
+.ant-select-dropdown .ant-select-item {
+  transition: none !important;
+}
+
+.ant-select-dropdown .ant-select-item-option {
+  transition: none !important;
+}
+
+.ant-select-dropdown-placement-bottomLeft,
+.ant-select-dropdown-placement-bottomRight,
+.ant-select-dropdown-placement-topLeft,
+.ant-select-dropdown-placement-topRight {
+  transition: none !important;
+}
+
+/* 减少DOM变化引起的resize事件 */
+.ant-select {
+  position: relative;
+}
+
+.ant-select-selector {
+  position: relative;
+}
+
+/* 优化渲染性能 */
+.ant-select-dropdown {
+  will-change: auto;
+}
+
+/* 防止频繁的DOM重绘 */
+.ant-card,
+.ant-form-item {
+  contain: layout style;
 }
 
 /* 消息提示样式 */
@@ -530,6 +579,28 @@
   position: relative;
   z-index: 1;
   overflow-x: hidden;
+}
+
+/* 修复卡片内下拉框显示问题 */
+.ant-card {
+  overflow: visible !important;
+}
+
+.ant-card-body {
+  overflow: visible !important;
+}
+
+/* 确保表单项的下拉框正确显示 */
+.ant-form-item {
+  overflow: visible !important;
+}
+
+.ant-row {
+  overflow: visible !important;
+}
+
+.ant-col {
+  overflow: visible !important;
 }
 
 /* 确保侧边栏在移动端正确显示 */

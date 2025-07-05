@@ -579,7 +579,10 @@ const Admin = () => {
             label="用户角色"
             rules={[{ required: true, message: '请选择用户角色' }]}
           >
-            <Select>
+            <Select 
+              virtual={false}
+              dropdownStyle={{ zIndex: 1050 }}
+            >
               <Option value="user">用户</Option>
               <Option value="moderator">版主</Option>
               <Option value="admin">管理员</Option>
@@ -591,7 +594,10 @@ const Admin = () => {
             label="账户状态"
             rules={[{ required: true, message: '请选择账户状态' }]}
           >
-            <Select>
+            <Select 
+              virtual={false}
+              dropdownStyle={{ zIndex: 1050 }}
+            >
               <Option value="active">正常</Option>
               <Option value="suspended">暂停</Option>
               <Option value="banned">封禁</Option>
