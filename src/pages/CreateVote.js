@@ -25,6 +25,8 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { createVote } from '../utils/contractUtils';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -75,33 +77,55 @@ const CreateVote = () => {
       return;
     }
 
+    // 验证时间范围
+    if (!values.timeRange || values.timeRange.length !== 2) {
+      message.error('请选择投票的开始和结束时间');
+      return;
+    }
+
+    const startTime = values.timeRange[0].valueOf();
+    const endTime = values.timeRange[1].valueOf();
+    
+    if (startTime <= Date.now()) {
+      message.error('开始时间必须晚于当前时间');
+      return;
+    }
+
+    if (endTime <= startTime) {
+      message.error('结束时间必须晚于开始时间');
+      return;
+    }
+
     setLoading(true);
     try {
       // 准备投票数据
       const voteData = {
-        ...values,
+        title: values.title,
+        description: values.description,
         options: validOptions,
-        creator: account,
-        createdAt: new Date().toISOString(),
-        status: 'pending'
+        voteType: values.voteType,
+        startTime: startTime,
+        endTime: endTime,
+        isPrivate: values.permissionType === 'private',
+        allowedVoters: [] // 如果是私有投票，这里应该处理允许的投票者列表
       };
 
       console.log('创建投票数据:', voteData);
 
-      // 这里应该调用智能合约创建投票
-      // const tx = await voteContract.createVote(voteData);
-      // await tx.wait();
-
-      // 模拟创建过程
-      setTimeout(() => {
+      // 调用智能合约创建投票
+      const result = await createVote(voteData);
+      
+      if (result.success) {
         message.success('投票创建成功！');
         navigate('/votes');
-        setLoading(false);
-      }, 2000);
+      } else {
+        throw new Error(result.error);
+      }
 
     } catch (error) {
       console.error('创建投票失败:', error);
-      message.error('创建投票失败，请重试');
+      message.error(`创建投票失败: ${error.message || '请重试'}`);
+    } finally {
       setLoading(false);
     }
   };
@@ -142,6 +166,37 @@ const CreateVote = () => {
             </List.Item>
           )}
         />
+
+        <Divider>时间设置</Divider>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Text strong>开始时间：</Text>
+            <Text>
+              {values.timeRange && values.timeRange[0] 
+                ? values.timeRange[0].format('YYYY-MM-DD HH:mm') 
+                : '未设置'}
+            </Text>
+          </Col>
+          <Col span={12}>
+            <Text strong>结束时间：</Text>
+            <Text>
+              {values.timeRange && values.timeRange[1] 
+                ? values.timeRange[1].format('YYYY-MM-DD HH:mm') 
+                : '未设置'}
+            </Text>
+          </Col>
+        </Row>
+        
+        {values.timeRange && values.timeRange[0] && values.timeRange[1] && (
+          <Row style={{ marginTop: 8 }}>
+            <Col span={24}>
+              <Text strong>投票持续时间：</Text>
+              <Text>
+                {Math.round(values.timeRange[1].diff(values.timeRange[0], 'hour', true))} 小时
+              </Text>
+            </Col>
+          </Row>
+        )}
 
         <Divider>投票设置</Divider>
         <Row gutter={16}>
@@ -185,6 +240,7 @@ const CreateVote = () => {
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
+              className="create-vote-form"
               initialValues={{
                 voteType: 'single',
                 permissionType: 'public',
@@ -259,6 +315,93 @@ const CreateVote = () => {
 
               <Divider />
 
+              {/* 时间设置 */}
+              <Title level={4}>时间设置</Title>
+              
+              <Form.Item
+                name="timeRange"
+                label="投票时间"
+                rules={[
+                  { required: true, message: '请选择投票的开始和结束时间' },
+                  {
+                    validator: (_, value) => {
+                      if (!value || value.length !== 2) {
+                        return Promise.reject(new Error('请选择完整的时间范围'));
+                      }
+                      
+                      const startTime = value[0];
+                      const endTime = value[1];
+                      const now = dayjs();
+                      
+                      if (startTime.isBefore(now.add(1, 'minute'))) {
+                        return Promise.reject(new Error('开始时间必须至少比当前时间晚1分钟'));
+                      }
+                      
+                      if (endTime.isBefore(startTime)) {
+                        return Promise.reject(new Error('结束时间不能早于开始时间'));
+                      }
+                      
+                      if (endTime.diff(startTime, 'minute') < 30) {
+                        return Promise.reject(new Error('投票持续时间至少需要30分钟'));
+                      }
+                      
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+                tooltip="设置投票的开始和结束时间，投票只能在此时间范围内进行"
+              >
+                <RangePicker
+                  showTime={{
+                    format: 'HH:mm',
+                    minuteStep: 15
+                  }}
+                  format="YYYY-MM-DD HH:mm"
+                  placeholder={['选择开始时间', '选择结束时间']}
+                  style={{ width: '100%' }}
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                  dropdownClassName="fixed-date-picker"
+                  popupStyle={{ 
+                    position: 'fixed',
+                    zIndex: 9999
+                  }}
+                  disabledDate={(current) => {
+                    // 禁用过去的日期
+                    return current && current < dayjs().startOf('day');
+                  }}
+                  disabledTime={(current, type) => {
+                    const now = dayjs();
+                    if (type === 'start') {
+                      // 如果是今天，禁用过去的小时和分钟
+                      if (current && current.isSame(now, 'day')) {
+                        return {
+                          disabledHours: () => {
+                            const hours = [];
+                            for (let i = 0; i < now.hour(); i++) {
+                              hours.push(i);
+                            }
+                            return hours;
+                          },
+                          disabledMinutes: (selectedHour) => {
+                            if (selectedHour === now.hour()) {
+                              const minutes = [];
+                              for (let i = 0; i <= now.minute(); i++) {
+                                minutes.push(i);
+                              }
+                              return minutes;
+                            }
+                            return [];
+                          }
+                        };
+                      }
+                    }
+                    return {};
+                  }}
+                />
+              </Form.Item>
+
+              <Divider />
+
               {/* 投票设置 */}
               <Title level={4}>投票设置</Title>
 
@@ -274,7 +417,7 @@ const CreateVote = () => {
                       dropdownStyle={{ zIndex: 1050 }}
                     >
                       <Option value="single">单选投票</Option>
-                      <Option value="multiple">多选投票</Option>
+                      <Option value="multi">多选投票</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -295,20 +438,6 @@ const CreateVote = () => {
                   </Form.Item>
                 </Col>
               </Row>
-
-              <Form.Item
-                name="timeRange"
-                label="投票时间"
-                rules={[{ required: true, message: '请选择投票时间范围' }]}
-              >
-                <RangePicker 
-                  showTime 
-                  style={{ width: '100%' }}
-                  placeholder={['开始时间', '结束时间']}
-                  dropdownClassName="vote-time-picker"
-                  getPopupContainer={trigger => trigger.parentNode}
-                />
-              </Form.Item>
 
               <Row gutter={16}>
                 <Col span={12}>

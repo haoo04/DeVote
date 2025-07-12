@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Layout, 
   Button, 
-  Dropdown, 
   Space, 
   Typography, 
   Badge,
   Avatar,
   Modal,
   Card,
-  Divider
+  message
 } from 'antd';
 import { 
   MenuFoldOutlined, 
@@ -18,11 +17,10 @@ import {
   UserOutlined,
   LogoutOutlined,
   SunOutlined,
-  MoonOutlined,
-  SettingOutlined,
-  CopyOutlined
+  MoonOutlined
 } from '@ant-design/icons';
 import { useWallet } from '../contexts/WalletContext';
+import { useNavigate } from 'react-router-dom';
 
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
@@ -40,7 +38,20 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
     isCorrectNetwork
   } = useWallet();
 
+  const navigate = useNavigate();
   const [walletModalVisible, setWalletModalVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const handleConnectWallet = (type) => {
     if (type === 'metamask') {
@@ -51,34 +62,14 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
     setWalletModalVisible(false);
   };
 
-  const copyAddress = () => {
-    if (account) {
-      navigator.clipboard.writeText(account);
-    }
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
-  const userMenuItems = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: '个人资料',
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '设置',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'disconnect',
-      icon: <LogoutOutlined />,
-      label: '断开连接',
-      danger: true,
-      onClick: disconnect,
-    },
-  ];
+  const handleDisconnect = () => {
+    disconnect();
+    message.success('已断开钱包连接');
+  };
 
   const WalletModal = () => (
     <Modal
@@ -87,6 +78,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
       onCancel={() => setWalletModalVisible(false)}
       footer={null}
       width={400}
+      style={{ zIndex: 1003 }}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <Card 
@@ -134,38 +126,74 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
     </Modal>
   );
 
+
+
   const ConnectedWallet = () => (
-    <Dropdown
-      menu={{ 
-        items: userMenuItems,
-        onClick: ({ key }) => {
-          if (key === 'profile') {
-            // 跳转到个人资料页
-          } else if (key === 'settings') {
-            // 跳转到设置页
-          }
-        }
-      }}
-      placement="bottomRight"
-    >
-      <Space style={{ cursor: 'pointer' }}>
-        <Badge 
-          dot 
-          status={isCorrectNetwork() ? 'success' : 'error'}
-          offset={[-2, 2]}
-        >
-          <Avatar icon={<UserOutlined />} />
-        </Badge>
-        <div style={{ textAlign: 'right' }}>
-          <Text strong style={{ display: 'block', fontSize: '12px' }}>
-            {formatAddress(account)}
-          </Text>
-          <Text type="secondary" style={{ fontSize: '10px' }}>
-            {parseFloat(balance).toFixed(4)} ETH
-          </Text>
-        </div>
-      </Space>
-    </Dropdown>
+    <Space size="small">
+      <div 
+        style={{ 
+          padding: '4px 8px',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={handleProfileClick}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = isDarkMode ? '#262626' : '#f5f5f5';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = 'transparent';
+        }}
+      >
+        <Avatar size={isMobile ? 28 : 32} icon={<UserOutlined />} />
+        {!isMobile && (
+          <div style={{ marginLeft: 8 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              lineHeight: '16px'
+            }}>
+              <Badge status={isCorrectNetwork() ? 'success' : 'error'} />
+              <Text 
+                strong 
+                style={{ 
+                  marginLeft: 8,
+                  color: isDarkMode ? '#fff' : '#000',
+                  maxWidth: '100px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {account && formatAddress ? formatAddress(account) : (account ? `${account.slice(0, 6)}...${account.slice(-4)}` : '')}
+              </Text>
+            </div>
+            <div style={{ 
+              fontSize: '10px',
+              color: isDarkMode ? '#999' : '#666',
+              lineHeight: '14px',
+              paddingLeft: '18px'
+            }}>
+              {parseFloat(balance || 0).toFixed(4)} ETH
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <Button
+        type="text"
+        icon={<LogoutOutlined />}
+        onClick={handleDisconnect}
+        size={isMobile ? "small" : "middle"}
+        style={{
+          color: isDarkMode ? '#ff7875' : '#ff4d4f',
+          padding: '4px 8px'
+        }}
+        title="退出登录"
+      />
+    </Space>
   );
 
   return (
@@ -188,13 +216,15 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
             style={{ fontSize: '16px', width: 64, height: 64 }}
           />
           
-          <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+          <Title level={isMobile ? 4 : 3} style={{ margin: 0, color: '#1890ff' }}>
             DeVote
           </Title>
           
-          <Text type="secondary" style={{ fontSize: '12px', marginLeft: 8 }}>
-            去中心化投票平台
-          </Text>
+          {!isMobile && (
+            <Text type="secondary" style={{ fontSize: '12px', marginLeft: 8 }}>
+              去中心化投票平台
+            </Text>
+          )}
         </Space>
 
         <Space size="middle">
@@ -202,11 +232,11 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
             type="text"
             icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
             onClick={onToggleTheme}
-            size="large"
+            size={isMobile ? "middle" : "large"}
           />
 
           {!isCorrectNetwork() && isConnected && (
-            <Badge status="error" text="网络错误" />
+            <Badge status="error" text={isMobile ? "" : "网络错误"} />
           )}
 
           {isConnected ? (
@@ -217,8 +247,9 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
               icon={<WalletOutlined />}
               loading={isConnecting}
               onClick={() => setWalletModalVisible(true)}
+              size={isMobile ? "middle" : "large"}
             >
-              连接钱包
+              {isMobile ? "连接" : "连接钱包"}
             </Button>
           )}
         </Space>

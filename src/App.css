@@ -25,12 +25,16 @@
 }
 
 .ant-layout-sider {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  height: calc(100vh - 64px);
+  z-index: 1001;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
 .ant-layout-content {
   margin-left: 256px;
-  margin-top: 64px;
   min-height: calc(100vh - 64px);
   padding: 24px;
   transition: margin-left 0.2s;
@@ -47,6 +51,12 @@
   margin-left: 80px;
 }
 
+.ant-layout-sider.ant-layout-sider-collapsed {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
+
 /* 响应式布局 */
 @media (max-width: 768px) {
   .ant-layout-content {
@@ -56,6 +66,8 @@
   
   .ant-layout-sider {
     position: fixed;
+    top: 64px;
+    left: 0;
     height: calc(100vh - 64px);
     z-index: 1001;
     transform: translateX(-100%);
@@ -87,6 +99,38 @@
   .ant-layout-content {
     overflow-x: hidden;
   }
+  
+  /* 移动端头部优化 */
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  /* 头部钱包信息在移动端的优化 */
+  .ant-layout-header .ant-space {
+    flex-wrap: nowrap;
+  }
+  
+  .ant-layout-header .ant-typography {
+    font-size: 10px !important;
+  }
+  
+  /* 移动端隐藏部分文本 */
+  .mobile-hide-text {
+    display: none !important;
+  }
+  
+  /* 钱包连接按钮在移动端的样式 */
+  .ant-layout-header .ant-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: auto;
+  }
+  
+  /* 头像和钱包信息容器的最大宽度 */
+  .wallet-info-container {
+    max-width: 100px;
+    overflow: hidden;
+  }
 }
 
 /* 平板端适配 */
@@ -111,6 +155,10 @@
   
   .ant-table-wrapper {
     overflow-x: auto;
+  }
+  
+  .wallet-info-container {
+    max-width: 140px;
   }
 }
 
@@ -235,22 +283,7 @@
   border-radius: 0 0 12px 12px;
 }
 
-/* 下拉菜单样式 */
-.ant-dropdown {
-  z-index: 1030;
-}
-
-.ant-select-dropdown {
-  z-index: 1050 !important;
-}
-
-.ant-picker-dropdown {
-  z-index: 1050 !important;
-}
-
-.vote-time-picker .ant-picker-dropdown {
-  z-index: 1050 !important;
-}
+/* 下拉菜单基础样式 - 已整合到底部用户下拉菜单样式中 */
 
 /* 确保所有选择器下拉框正确显示 */
 .ant-select-dropdown,
@@ -636,3 +669,113 @@
   background-clip: text;
   font-weight: 600;
 }
+
+/* 头部用户头像下拉菜单特殊样式 */
+.ant-layout-header .ant-dropdown {
+  z-index: 1003 !important;
+}
+
+.ant-layout-header .ant-dropdown-menu {
+  margin-top: 4px;
+  min-width: 160px;
+  z-index: 1003 !important;
+}
+
+.ant-select-dropdown {
+  z-index: 1003 !important;
+}
+
+.ant-picker-dropdown {
+  z-index: 1003 !important;
+}
+
+.vote-time-picker .ant-picker-dropdown {
+  z-index: 1050 !important;
+}
+
+/* 确保时间选择器面板在所有层级之上 */
+.ant-picker-dropdown .ant-picker-panel-container {
+  z-index: 1050 !important;
+}
+
+.ant-picker-time-panel {
+  z-index: 1050 !important;
+}
+
+/* 钱包信息容器优化 */
+.wallet-info-container {
+  min-width: 0;
+  max-width: 120px;
+}
+
+/* 日期选择器下拉框样式 */
+.ant-picker-dropdown {
+  z-index: 1055 !important;
+}
+
+.ant-picker-dropdown .ant-picker-panel-container {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+}
+
+/* CreateVote页面日期选择器特殊样式 */
+.vote-time-picker .ant-picker-dropdown {
+  z-index: 1060 !important;
+}
+
+/* 确保日期选择器面板在正确位置显示 */
+.ant-picker-dropdown .ant-picker-panel {
+  border-radius: 8px;
+}
+
+/* 时间选择面板样式 */
+.ant-picker-time-panel {
+  border-radius: 8px;
+}
+
+/* 固定日期选择器样式 - 解决漂移问题 */
+.fixed-date-picker .ant-picker-dropdown {
+  position: fixed !important;
+  z-index: 9999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.fixed-date-picker .ant-picker-panel-container {
+  position: relative !important;
+  z-index: 10000 !important;
+}
+
+.fixed-date-picker .ant-picker-range-separator {
+  position: relative !important;
+  z-index: 10001 !important;
+}
+
+/* 创建投票页面的特殊样式 */
+.create-vote-form .ant-picker-dropdown {
+  position: fixed !important;
+  z-index: 9999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+/* 防止日期选择器被其他元素遮挡 */
+.ant-picker-range-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* 确保日期选择器在表单中正确显示 */
+.ant-form-item .ant-picker-dropdown {
+  z-index: 9999 !important;
+}
+
+

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { message } from 'antd';
+import * as contractUtils from '../utils/contractUtils';
 
 const WalletContext = createContext();
 
@@ -184,8 +185,139 @@ const WalletProvider = ({ children }) => {
 
   // 检查是否为正确的网络
   const isCorrectNetwork = () => {
-    // 这里可以根据需要设置正确的网络ID
-    return chainId === '1' || chainId === '0x1'; // 以太坊主网
+    // 支持以太坊主网和本地测试网络
+    const supportedChains = [
+      '1', '0x1',        // 以太坊主网
+      '31337', '0x7a69', // 本地测试网络 (Hardhat)
+      '1337', '0x539'    // 本地测试网络 (Ganache)
+    ];
+    return supportedChains.includes(chainId);
+  };
+
+  // 切换到本地测试网络
+  const switchToLocalNetwork = async () => {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x7a69' }], // 31337 in hex
+      });
+    } catch (error) {
+      // 如果网络不存在，尝试添加它
+      if (error.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x7a69',
+              chainName: 'Hardhat Local',
+              nativeCurrency: {
+                name: 'Ethereum',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['http://127.0.0.1:8545'],
+              blockExplorerUrls: null
+            }]
+          });
+        } catch (addError) {
+          console.error('添加本地网络失败:', addError);
+          message.error('添加本地网络失败');
+        }
+      } else {
+        console.error('切换网络失败:', error);
+        message.error('切换到本地网络失败');
+      }
+    }
+  };
+
+  // 获取网络名称
+  const getNetworkName = () => {
+    switch (chainId) {
+      case '1':
+      case '0x1':
+        return '以太坊主网';
+      case '31337':
+      case '0x7a69':
+        return 'Hardhat本地网络';
+      case '1337':
+      case '0x539':
+        return 'Ganache本地网络';
+      default:
+        return '未知网络';
+    }
+  };
+
+  // 合约交互功能
+  const contractOperations = {
+    // 创建投票
+    createVote: async (voteData) => {
+      if (!account) {
+        message.error('请先连接钱包');
+        return { success: false, error: '未连接钱包' };
+      }
+      
+      if (!isCorrectNetwork()) {
+        message.error('请切换到正确的网络');
+        return { success: false, error: '网络错误' };
+      }
+      
+      return await contractUtils.createVote(voteData);
+    },
+    
+    // 参与投票
+    castVote: async (voteId, choices) => {
+      if (!account) {
+        message.error('请先连接钱包');
+        return { success: false, error: '未连接钱包' };
+      }
+      
+      if (!isCorrectNetwork()) {
+        message.error('请切换到正确的网络');
+        return { success: false, error: '网络错误' };
+      }
+      
+      return await contractUtils.castVote(voteId, choices);
+    },
+    
+    // 结束投票
+    endVote: async (voteId) => {
+      if (!account) {
+        message.error('请先连接钱包');
+        return { success: false, error: '未连接钱包' };
+      }
+      
+      if (!isCorrectNetwork()) {
+        message.error('请切换到正确的网络');
+        return { success: false, error: '网络错误' };
+      }
+      
+      return await contractUtils.endVote(voteId);
+    },
+    
+    // 取消投票
+    cancelVote: async (voteId) => {
+      if (!account) {
+        message.error('请先连接钱包');
+        return { success: false, error: '未连接钱包' };
+      }
+      
+      if (!isCorrectNetwork()) {
+        message.error('请切换到正确的网络');
+        return { success: false, error: '网络错误' };
+      }
+      
+      return await contractUtils.cancelVote(voteId);
+    },
+    
+    // 获取投票信息
+    getVoteInfo: contractUtils.getVoteInfo,
+    getAllVoteIds: contractUtils.getAllVoteIds,
+    getUserCreatedVotes: contractUtils.getUserCreatedVotes,
+    getUserParticipatedVotes: contractUtils.getUserParticipatedVotes,
+    hasUserVoted: contractUtils.hasUserVoted,
+    getUserVoteChoices: contractUtils.getUserVoteChoices,
+    canUserVote: contractUtils.canUserVote,
+    autoEndExpiredVotes: contractUtils.autoEndExpiredVotes,
   };
 
   const value = {
@@ -203,12 +335,17 @@ const WalletProvider = ({ children }) => {
     disconnect,
     updateBalance,
     switchToEthereum,
+    switchToLocalNetwork,
     addEthereumChain,
     formatAddress,
     isCorrectNetwork,
+    getNetworkName,
     
     // 计算属性
     isConnected: !!account,
+    
+    // 合约交互
+    contractOperations,
   };
 
   return (

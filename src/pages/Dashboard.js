@@ -23,13 +23,14 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { getAllVoteIds, getVoteInfo, getUserCreatedVotes, getUserParticipatedVotes } from '../utils/contractUtils';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { isConnected } = useWallet();
-  const [loading, setLoading] = useState(true);
+  const { isConnected, account } = useWallet();
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalVotes: 0,
     activeVotes: 0,
@@ -40,72 +41,105 @@ const Dashboard = () => {
   const [myVotes, setMyVotes] = useState([]);
 
   useEffect(() => {
-    // 模拟数据加载
-    const loadData = async () => {
-      setLoading(true);
-      
-      // 模拟API调用
-      setTimeout(() => {
+    if (isConnected) {
+      loadData();
+    }
+  }, [isConnected]);
+
+  const loadData = async () => {
+    setLoading(true);
+    
+    try {
+      // 从智能合约获取统计数据
+      const allVoteIdsResult = await getAllVoteIds();
+      if (allVoteIdsResult.success) {
+        const voteIds = allVoteIdsResult.data;
+        const totalVotes = voteIds.length;
+        
+        // 获取所有投票信息来统计活跃投票数和参与人数
+        let activeVotes = 0;
+        let totalParticipants = 0;
+        const allVotesInfo = [];
+        
+        for (const voteId of voteIds) {
+          const voteInfoResult = await getVoteInfo(voteId);
+          if (voteInfoResult.success) {
+            const voteInfo = voteInfoResult.data;
+            allVotesInfo.push(voteInfo);
+            
+            // 统计活跃投票
+            if (voteInfo.status === 'active') {
+              activeVotes++;
+            }
+            
+            // 统计总参与人数
+            totalParticipants += voteInfo.totalVoters;
+          }
+        }
+        
+        // 获取用户参与的投票数
+        let participatedVotes = 0;
+        if (account) {
+          const userParticipatedResult = await getUserParticipatedVotes(account);
+          if (userParticipatedResult.success) {
+            participatedVotes = userParticipatedResult.data.length;
+          }
+        }
+        
         setStats({
-          totalVotes: 156,
-          activeVotes: 23,
-          participatedVotes: 45,
-          totalParticipants: 1234
+          totalVotes,
+          activeVotes,
+          participatedVotes,
+          totalParticipants
         });
 
-        setRecentVotes([
-          {
-            id: 1,
-            title: '2024年度最佳区块链项目投票',
-            description: '选出您认为最优秀的区块链项目',
-            status: 'active',
-            endTime: '2024-01-20',
-            participants: 89,
-            totalVotes: 156
-          },
-          {
-            id: 2,
-            title: '社区治理提案 #001',
-            description: '关于更新投票规则的提案',
-            status: 'active',
-            endTime: '2024-01-18',
-            participants: 234,
-            totalVotes: 289
-          },
-          {
-            id: 3,
-            title: 'DeFi协议安全审计结果投票',
-            description: '对审计结果进行社区投票确认',
-            status: 'completed',
-            endTime: '2024-01-15',
-            participants: 567,
-            totalVotes: 892
+        // 获取最近的投票列表（最近5个）
+        const recentVotesList = allVotesInfo
+          .sort((a, b) => b.startTime - a.startTime)
+          .slice(0, 5)
+          .map(vote => ({
+            id: vote.id,
+            title: vote.title,
+            description: vote.description,
+            status: vote.status,
+            participants: vote.totalVoters,
+            totalVotes: vote.totalVoters,
+            endTime: new Date(vote.endTime).toLocaleDateString()
+          }));
+        
+        setRecentVotes(recentVotesList);
+
+        // 获取我创建的投票
+        if (account) {
+          const myVotesResult = await getUserCreatedVotes(account);
+          if (myVotesResult.success) {
+            const myVotesList = [];
+            for (const voteId of myVotesResult.data.slice(0, 5)) {
+              const voteInfoResult = await getVoteInfo(voteId);
+              if (voteInfoResult.success) {
+                const voteInfo = voteInfoResult.data;
+                myVotesList.push({
+                  id: voteInfo.id,
+                  title: voteInfo.title,
+                  description: voteInfo.description,
+                  status: voteInfo.status,
+                  participants: voteInfo.totalVoters,
+                  totalVotes: voteInfo.totalVoters,
+                  endTime: new Date(voteInfo.endTime).toLocaleDateString()
+                });
+              }
+            }
+            setMyVotes(myVotesList);
           }
-        ]);
+        }
+      }
 
-        setMyVotes([
-          {
-            id: 1,
-            title: '我发起的投票 #001',
-            status: 'active',
-            participants: 45,
-            endTime: '2024-01-25'
-          },
-          {
-            id: 2,
-            title: '我发起的投票 #002',
-            status: 'completed',
-            participants: 123,
-            endTime: '2024-01-10'
-          }
-        ]);
-
-        setLoading(false);
-      }, 1000);
-    };
-
-    loadData();
-  }, []);
+      setLoading(false);
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      setLoading(false);
+    }
+  };
 
   const getStatusTag = (status) => {
     const statusMap = {
@@ -204,52 +238,59 @@ const Dashboard = () => {
             }
           >
             <Spin spinning={loading}>
-              <List
-                dataSource={recentVotes}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button 
-                        type="link" 
-                        icon={<EyeOutlined />}
-                        onClick={() => navigate(`/vote/${item.id}`)}
-                      >
-                        查看详情
-                      </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={
-                        <Space>
-                          {item.title}
-                          {getStatusTag(item.status)}
-                        </Space>
-                      }
-                      description={
-                        <div>
-                          <Text type="secondary">{item.description}</Text>
-                          <br />
-                          <Space style={{ marginTop: 8 }}>
-                            <Text type="secondary">
-                              <UserOutlined /> {item.participants} 人参与
-                            </Text>
-                            <Text type="secondary">
-                              <ClockCircleOutlined /> 截止: {item.endTime}
-                            </Text>
+              {recentVotes.length > 0 ? (
+                <List
+                  dataSource={recentVotes}
+                  renderItem={(item) => (
+                    <List.Item
+                      actions={[
+                        <Button 
+                          type="link" 
+                          icon={<EyeOutlined />}
+                          onClick={() => navigate(`/vote/${item.id}`)}
+                        >
+                          查看详情
+                        </Button>
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            {item.title}
+                            {getStatusTag(item.status)}
                           </Space>
-                          {item.status === 'active' && (
-                            <Progress 
-                              percent={Math.round((item.participants / item.totalVotes) * 100)} 
-                              size="small" 
-                              style={{ marginTop: 8 }}
-                            />
-                          )}
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                        }
+                        description={
+                          <div>
+                            <Text type="secondary">{item.description}</Text>
+                            <br />
+                            <Space style={{ marginTop: 8 }}>
+                              <Text type="secondary">
+                                <UserOutlined /> {item.participants} 人参与
+                              </Text>
+                              <Text type="secondary">
+                                <ClockCircleOutlined /> 截止: {item.endTime}
+                              </Text>
+                            </Space>
+                            {item.status === 'active' && (
+                              <Progress 
+                                percent={Math.round((item.participants / item.totalVotes) * 100)} 
+                                size="small" 
+                                style={{ marginTop: 8 }}
+                              />
+                            )}
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="暂无最新投票"
+                />
+              )}
             </Spin>
           </Card>
         </Col>
@@ -287,37 +328,45 @@ const Dashboard = () => {
 
           <Card title="我发起的投票">
             <Spin spinning={loading}>
-              <List
-                size="small"
-                dataSource={myVotes}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button 
-                        type="link" 
-                        size="small"
-                        onClick={() => navigate(`/vote/${item.id}`)}
-                      >
-                        管理
-                      </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={
-                        <Space>
-                          <Text style={{ fontSize: '14px' }}>{item.title}</Text>
-                          {getStatusTag(item.status)}
-                        </Space>
-                      }
-                      description={
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {item.participants} 人参与 · 截止: {item.endTime}
-                        </Text>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+              {myVotes.length > 0 ? (
+                <List
+                  size="small"
+                  dataSource={myVotes}
+                  renderItem={(item) => (
+                    <List.Item
+                      actions={[
+                        <Button 
+                          type="link" 
+                          size="small"
+                          onClick={() => navigate(`/vote/${item.id}`)}
+                        >
+                          管理
+                        </Button>
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <Text style={{ fontSize: '14px' }}>{item.title}</Text>
+                            {getStatusTag(item.status)}
+                          </Space>
+                        }
+                        description={
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            {item.participants} 人参与 · 截止: {item.endTime}
+                          </Text>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="您还没有发起过投票"
+                  style={{ padding: '20px 0' }}
+                />
+              )}
             </Spin>
           </Card>
         </Col>

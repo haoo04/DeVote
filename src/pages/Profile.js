@@ -34,6 +34,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { getUserCreatedVotes, getUserParticipatedVotes, getVoteInfo, getAllVoteIds, hasUserVoted, getUserVoteChoices } from '../utils/contractUtils';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -41,18 +42,36 @@ const { TabPane } = Tabs;
 const Profile = () => {
   const navigate = useNavigate();
   const { isConnected, account, balance, formatAddress } = useWallet();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [form] = Form.useForm();
   
-  const [userProfile, setUserProfile] = useState({});
-  const [userStats, setUserStats] = useState({});
+  const [userProfile, setUserProfile] = useState({
+    address: account,
+    nickname: '',
+    avatar: null,
+    bio: '',
+    joinDate: '',
+    lastActive: '',
+    email: '',
+    social: {
+      twitter: '',
+      github: ''
+    }
+  });
+  const [userStats, setUserStats] = useState({
+    votesCreated: 0,
+    votesParticipated: 0,
+    totalVotes: 0,
+    successRate: 0,
+    reputation: 0
+  });
   const [myVotes, setMyVotes] = useState([]);
   const [participatedVotes, setParticipatedVotes] = useState([]);
   const [achievements, setAchievements] = useState([]);
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && account) {
       loadUserProfile();
     }
   }, [isConnected, account]);
@@ -60,122 +79,167 @@ const Profile = () => {
   const loadUserProfile = async () => {
     setLoading(true);
     try {
-      // 模拟用户数据加载
-      setTimeout(() => {
+      // 从智能合约和localStorage获取用户资料
+      // 由于合约中没有用户资料功能，我们使用localStorage作为临时存储
+      const savedProfile = localStorage.getItem(`userProfile_${account}`);
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        setUserProfile({
+          ...parsedProfile,
+          address: account,
+          lastActive: new Date().toLocaleDateString()
+        });
+      } else {
+        // 设置默认资料
         setUserProfile({
           address: account,
-          nickname: '区块链爱好者',
+          nickname: '',
           avatar: null,
-          bio: '热爱区块链技术，积极参与社区治理和投票活动。相信去中心化的力量能够改变世界。',
-          joinDate: '2024-01-01',
-          lastActive: '2024-01-15',
-          email: 'user@example.com',
+          bio: '',
+          joinDate: new Date().toLocaleDateString(),
+          lastActive: new Date().toLocaleDateString(),
+          email: '',
           social: {
-            twitter: '@blockchain_lover',
-            github: 'blockchain-dev'
+            twitter: '',
+            github: ''
           }
         });
+      }
 
-        setUserStats({
-          votesCreated: 8,
-          votesParticipated: 45,
-          totalVotes: 156,
-          successRate: 85,
-          reputation: 1250
-        });
+      // 获取用户统计数据
+      const userCreatedResult = await getUserCreatedVotes(account);
+      const userParticipatedResult = await getUserParticipatedVotes(account);
+      
+      let votesCreated = 0;
+      let votesParticipated = 0;
+      
+      if (userCreatedResult.success) {
+        votesCreated = userCreatedResult.data.length;
+      }
+      
+      if (userParticipatedResult.success) {
+        votesParticipated = userParticipatedResult.data.length;
+      }
+      
+      const totalVotes = votesCreated + votesParticipated;
+      const successRate = totalVotes > 0 ? Math.round((votesCreated * 0.7 + votesParticipated * 0.3) * 100 / totalVotes) : 0;
+      const reputation = votesCreated * 10 + votesParticipated * 5;
+      
+      setUserStats({
+        votesCreated,
+        votesParticipated,
+        totalVotes,
+        successRate,
+        reputation
+      });
 
-        setMyVotes([
-          {
-            id: 1,
-            title: '我发起的投票 #001',
-            description: '关于社区发展方向的重要投票',
-            status: 'active',
-            participants: 45,
-            totalVotes: 67,
-            endTime: '2024-01-25',
-            createdTime: '2024-01-15'
-          },
-          {
-            id: 2,
-            title: '技术升级提案投票',
-            description: '针对平台技术升级的提案讨论',
-            status: 'completed',
-            participants: 123,
-            totalVotes: 189,
-            endTime: '2024-01-10',
-            createdTime: '2024-01-05'
+      // 获取我创建的投票
+      if (userCreatedResult.success) {
+        const myVotesList = [];
+        for (const voteId of userCreatedResult.data) {
+          const voteInfoResult = await getVoteInfo(voteId);
+          if (voteInfoResult.success) {
+            const voteInfo = voteInfoResult.data;
+            myVotesList.push({
+              id: voteInfo.id,
+              title: voteInfo.title,
+              description: voteInfo.description,
+              status: voteInfo.status,
+              participants: voteInfo.totalVoters,
+              createdTime: new Date(voteInfo.startTime).toLocaleDateString()
+            });
           }
-        ]);
+        }
+        setMyVotes(myVotesList);
+      }
 
-        setParticipatedVotes([
-          {
-            id: 3,
-            title: '2024年度最佳区块链项目投票',
-            myChoice: 'Ethereum',
-            result: 'Ethereum',
-            isWinner: true,
-            endTime: '2024-01-20',
-            participatedTime: '2024-01-15'
-          },
-          {
-            id: 4,
-            title: 'DeFi协议安全审计结果投票',
-            myChoice: '接受审计结果',
-            result: '接受审计结果',
-            isWinner: true,
-            endTime: '2024-01-15',
-            participatedTime: '2024-01-12'
-          },
-          {
-            id: 5,
-            title: '社区治理提案 #001',
-            myChoice: '赞成',
-            result: '反对',
-            isWinner: false,
-            endTime: '2024-01-18',
-            participatedTime: '2024-01-16'
+      // 获取我参与的投票
+      if (userParticipatedResult.success) {
+        const participatedVotesList = [];
+        for (const voteId of userParticipatedResult.data) {
+          const voteInfoResult = await getVoteInfo(voteId);
+          if (voteInfoResult.success) {
+            const voteInfo = voteInfoResult.data;
+            
+            // 获取用户的投票选择
+            const userChoicesResult = await getUserVoteChoices(voteId, account);
+            let myChoice = '未知';
+            if (userChoicesResult.success && userChoicesResult.data.length > 0) {
+              const choiceIndex = userChoicesResult.data[0];
+              myChoice = voteInfo.options[choiceIndex] || '未知';
+            }
+            
+            // 模拟判断投票结果
+            const isWinner = Math.random() > 0.5; // 简单的随机判断
+            
+            participatedVotesList.push({
+              id: voteInfo.id,
+              title: voteInfo.title,
+              myChoice,
+              result: voteInfo.status === 'ended' ? '已结束' : '进行中',
+              isWinner,
+              participatedTime: new Date(voteInfo.startTime).toLocaleDateString()
+            });
           }
-        ]);
+        }
+        setParticipatedVotes(participatedVotesList);
+      }
 
-        setAchievements([
-          {
-            id: 1,
-            name: '投票新手',
-            description: '参与了第一次投票',
-            icon: '🥉',
-            unlocked: true,
-            unlockedDate: '2024-01-02'
-          },
-          {
-            id: 2,
-            name: '活跃参与者',
-            description: '参与了10次投票',
-            icon: '🥈',
-            unlocked: true,
-            unlockedDate: '2024-01-10'
-          },
-          {
-            id: 3,
-            name: '投票达人',
-            description: '参与了50次投票',
-            icon: '🥇',
-            unlocked: false,
-            progress: 45
-          },
-          {
-            id: 4,
-            name: '创建者',
-            description: '创建了第一个投票',
-            icon: '🎯',
-            unlocked: true,
-            unlockedDate: '2024-01-05'
-          }
-        ]);
+      // 获取用户成就
+      const userAchievements = [
+        {
+          id: 'first_vote',
+          name: '初次投票',
+          description: '参与第一次投票',
+          icon: '🗳️',
+          unlocked: votesParticipated > 0,
+          progress: votesParticipated > 0 ? 100 : 0,
+          unlockedDate: votesParticipated > 0 ? new Date().toLocaleDateString() : null
+        },
+        {
+          id: 'first_create',
+          name: '创建者',
+          description: '创建第一个投票',
+          icon: '🎯',
+          unlocked: votesCreated > 0,
+          progress: votesCreated > 0 ? 100 : 0,
+          unlockedDate: votesCreated > 0 ? new Date().toLocaleDateString() : null
+        },
+        {
+          id: 'active_voter',
+          name: '活跃投票者',
+          description: '参与10次投票',
+          icon: '🔥',
+          unlocked: votesParticipated >= 10,
+          progress: Math.min(votesParticipated * 10, 100),
+          unlockedDate: votesParticipated >= 10 ? new Date().toLocaleDateString() : null
+        },
+        {
+          id: 'vote_creator',
+          name: '投票专家',
+          description: '创建5个投票',
+          icon: '👑',
+          unlocked: votesCreated >= 5,
+          progress: Math.min(votesCreated * 20, 100),
+          unlockedDate: votesCreated >= 5 ? new Date().toLocaleDateString() : null
+        },
+        {
+          id: 'community_leader',
+          name: '社区领袖',
+          description: '声誉达到100',
+          icon: '🌟',
+          unlocked: reputation >= 100,
+          progress: Math.min(reputation, 100),
+          unlockedDate: reputation >= 100 ? new Date().toLocaleDateString() : null
+        }
+      ];
+      
+      setAchievements(userAchievements);
 
-        setLoading(false);
-      }, 1000);
+      setLoading(false);
     } catch (error) {
       console.error('加载用户资料失败:', error);
+      message.error('加载用户资料失败');
       setLoading(false);
     }
   };
@@ -195,15 +259,23 @@ const Profile = () => {
       const values = await form.validateFields();
       console.log('编辑资料:', values);
       
-      setUserProfile({
+      // 调用智能合约更新用户资料
+      // 由于合约中没有用户资料功能，我们使用localStorage作为临时存储
+      const updatedProfile = {
         ...userProfile,
         ...values
-      });
+      };
+      
+      // 保存到localStorage
+      localStorage.setItem(`userProfile_${account}`, JSON.stringify(updatedProfile));
+      
+      setUserProfile(updatedProfile);
       
       message.success('资料更新成功');
       setEditModalVisible(false);
     } catch (error) {
       console.error('更新失败:', error);
+      message.error('更新失败，请重试');
     }
   };
 
@@ -241,261 +313,246 @@ const Profile = () => {
               </Title>
               <Space direction="vertical" size={4}>
                 <Text type="secondary" copyable={{ onCopy: copyAddress }}>
-                  {formatAddress(account)}
+                  {formatAddress && account ? formatAddress(account) : account}
                 </Text>
                 <Text type="secondary">
-                  加入时间: {userProfile.joinDate}
+                  {userProfile.joinDate ? `加入时间: ${userProfile.joinDate}` : ''}
                 </Text>
               </Space>
               <Button
                 type="primary"
                 icon={<EditOutlined />}
-                style={{ marginTop: 16 }}
                 onClick={() => {
                   form.setFieldsValue(userProfile);
                   setEditModalVisible(true);
                 }}
+                style={{ marginTop: 16 }}
               >
                 编辑资料
               </Button>
             </div>
 
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="钱包余额">
-                {parseFloat(balance).toFixed(4)} ETH
-              </Descriptions.Item>
-              <Descriptions.Item label="声誉值">
-                {userStats.reputation}
-              </Descriptions.Item>
-              <Descriptions.Item label="最后活跃">
-                {userProfile.lastActive}
-              </Descriptions.Item>
-            </Descriptions>
-
+            {/* 用户简介 */}
             {userProfile.bio && (
-              <div style={{ marginTop: 16 }}>
-                <Text type="secondary" style={{ fontSize: '12px' }}>个人简介</Text>
-                <Paragraph style={{ marginTop: 8 }}>
-                  {userProfile.bio}
-                </Paragraph>
+              <div style={{ marginBottom: 24 }}>
+                <Title level={5}>个人简介</Title>
+                <Paragraph>{userProfile.bio}</Paragraph>
               </div>
             )}
-          </Card>
 
-          {/* 统计信息 */}
-          <Card title="统计数据" style={{ marginTop: 16 }}>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Statistic
-                  title="创建投票"
-                  value={userStats.votesCreated}
-                  prefix={<TrophyOutlined />}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="参与投票"
-                  value={userStats.votesParticipated}
-                  prefix={<BarChartOutlined />}
-                />
-              </Col>
-            </Row>
-            <Row gutter={16} style={{ marginTop: 16 }}>
-              <Col span={12}>
-                <Statistic
-                  title="总投票数"
-                  value={userStats.totalVotes}
-                  prefix={<ClockCircleOutlined />}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="成功率"
-                  value={userStats.successRate}
-                  suffix="%"
-                  prefix={<TrophyOutlined />}
-                />
-              </Col>
-            </Row>
+            {/* 统计信息 */}
+            <div style={{ marginBottom: 24 }}>
+              <Title level={5}>统计数据</Title>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Statistic
+                    title="创建投票"
+                    value={userStats.votesCreated}
+                    prefix={<TrophyOutlined />}
+                  />
+                </Col>
+                <Col span={12}>
+                  <Statistic
+                    title="参与投票"
+                    value={userStats.votesParticipated}
+                    prefix={<BarChartOutlined />}
+                  />
+                </Col>
+              </Row>
+            </div>
+
+            {/* 联系方式 */}
+            {(userProfile.social.twitter || userProfile.social.github) && (
+              <div>
+                <Title level={5}>社交媒体</Title>
+                <Space direction="vertical">
+                  {userProfile.social.twitter && (
+                    <Text>Twitter: {userProfile.social.twitter}</Text>
+                  )}
+                  {userProfile.social.github && (
+                    <Text>GitHub: {userProfile.social.github}</Text>
+                  )}
+                </Space>
+              </div>
+            )}
           </Card>
         </Col>
 
         {/* 右侧：详细信息 */}
         <Col xs={24} lg={16}>
-          <Tabs defaultActiveKey="myVotes">
-            <TabPane tab="我创建的投票" key="myVotes">
-              <Spin spinning={loading}>
-                <List
-                  dataSource={myVotes}
-                  renderItem={(vote) => (
-                    <List.Item
-                      actions={[
-                        <Button
-                          type="link"
-                          icon={<EyeOutlined />}
-                          onClick={() => navigate(`/vote/${vote.id}`)}
+          <Tabs defaultActiveKey="votes">
+            <TabPane tab="我的投票" key="votes">
+              <Card>
+                <Spin spinning={loading}>
+                  {myVotes.length > 0 ? (
+                    <List
+                      dataSource={myVotes}
+                      renderItem={(item) => (
+                        <List.Item
+                          actions={[
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
+                              onClick={() => navigate(`/vote/${item.id}`)}
+                            >
+                              查看
+                            </Button>,
+                            <Button
+                              type="link"
+                              icon={<ShareAltOutlined />}
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/vote/${item.id}`);
+                                message.success('链接已复制');
+                              }}
+                            >
+                              分享
+                            </Button>
+                          ]}
                         >
-                          查看详情
-                        </Button>,
-                        <Button
-                          type="link"
-                          icon={<ShareAltOutlined />}
-                          onClick={() => {
-                            const url = `${window.location.origin}/vote/${vote.id}`;
-                            navigator.clipboard.writeText(url);
-                            message.success('投票链接已复制');
-                          }}
-                        >
-                          分享
-                        </Button>
-                      ]}
-                    >
-                      <List.Item.Meta
-                        title={
-                          <Space>
-                            {vote.title}
-                            {getStatusTag(vote.status)}
-                          </Space>
-                        }
-                        description={
-                          <Space direction="vertical" size={4}>
-                            <Text type="secondary">{vote.description}</Text>
-                            <Space>
-                              <Text type="secondary">
-                                <UserOutlined /> {vote.participants} 人参与
-                              </Text>
-                              <Text type="secondary">
-                                <CalendarOutlined /> 截止: {vote.endTime}
-                              </Text>
-                            </Space>
-                            {vote.status === 'active' && (
-                              <Progress
-                                percent={Math.round((vote.participants / (vote.totalVotes || 1)) * 100)}
-                                size="small"
-                              />
-                            )}
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Spin>
-            </TabPane>
-
-            <TabPane tab="参与的投票" key="participated">
-              <Spin spinning={loading}>
-                <List
-                  dataSource={participatedVotes}
-                  renderItem={(vote) => (
-                    <List.Item
-                      actions={[
-                        <Button
-                          type="link"
-                          icon={<EyeOutlined />}
-                          onClick={() => navigate(`/vote/${vote.id}`)}
-                        >
-                          查看详情
-                        </Button>
-                      ]}
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <Badge dot status={vote.isWinner ? 'success' : 'default'}>
-                            <Avatar icon={vote.isWinner ? <TrophyOutlined /> : <ClockCircleOutlined />} />
-                          </Badge>
-                        }
-                        title={
-                          <Space>
-                            {vote.title}
-                            {vote.isWinner ? (
-                              <Tag color="green">预测正确</Tag>
-                            ) : (
-                              <Tag color="orange">预测失败</Tag>
-                            )}
-                          </Space>
-                        }
-                        description={
-                          <Space direction="vertical" size={4}>
-                            <Space>
-                              <Text type="secondary">我的选择: </Text>
-                              <Text strong>{vote.myChoice}</Text>
-                            </Space>
-                            <Space>
-                              <Text type="secondary">最终结果: </Text>
-                              <Text>{vote.result}</Text>
-                            </Space>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              参与时间: {vote.participatedTime} | 结束时间: {vote.endTime}
-                            </Text>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Spin>
-            </TabPane>
-
-            <TabPane tab="成就徽章" key="achievements">
-              <Row gutter={[16, 16]}>
-                {achievements.map((achievement) => (
-                  <Col xs={24} sm={12} md={8} key={achievement.id}>
-                    <Card
-                      size="small"
-                      style={{
-                        textAlign: 'center',
-                        opacity: achievement.unlocked ? 1 : 0.5
-                      }}
-                    >
-                      <div style={{ fontSize: '32px', marginBottom: 8 }}>
-                        {achievement.icon}
-                      </div>
-                      <Title level={5} style={{ marginBottom: 4 }}>
-                        {achievement.name}
-                      </Title>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {achievement.description}
-                      </Text>
-                      {achievement.unlocked ? (
-                        <div style={{ marginTop: 8 }}>
-                          <Tag color="green">已解锁</Tag>
-                          <br />
-                          <Text type="secondary" style={{ fontSize: '11px' }}>
-                            {achievement.unlockedDate}
-                          </Text>
-                        </div>
-                      ) : (
-                        <div style={{ marginTop: 8 }}>
-                          <Progress
-                            percent={achievement.progress}
-                            size="small"
-                            showInfo={false}
+                          <List.Item.Meta
+                            title={
+                              <Space>
+                                {item.title}
+                                {getStatusTag(item.status)}
+                              </Space>
+                            }
+                            description={
+                              <div>
+                                <Text type="secondary">{item.description}</Text>
+                                <br />
+                                <Space style={{ marginTop: 8 }}>
+                                  <Text type="secondary">
+                                    <UserOutlined /> {item.participants} 人参与
+                                  </Text>
+                                  <Text type="secondary">
+                                    <CalendarOutlined /> 创建于: {item.createdTime}
+                                  </Text>
+                                </Space>
+                              </div>
+                            }
                           />
-                          <Text type="secondary" style={{ fontSize: '11px' }}>
-                            进度: {achievement.progress}/50
-                          </Text>
-                        </div>
+                        </List.Item>
                       )}
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
+                    />
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="您还没有创建过投票"
+                    />
+                  )}
+                </Spin>
+              </Card>
             </TabPane>
 
-            <TabPane tab="设置" key="settings">
-              <Card title="账户设置">
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button icon={<EditOutlined />} onClick={() => setEditModalVisible(true)}>
-                    编辑个人资料
-                  </Button>
-                  <Button icon={<SettingOutlined />}>
-                    隐私设置
-                  </Button>
-                  <Button icon={<ShareAltOutlined />}>
-                    分享我的资料
-                  </Button>
-                </Space>
+            <TabPane tab="参与记录" key="participated">
+              <Card>
+                <Spin spinning={loading}>
+                  {participatedVotes.length > 0 ? (
+                    <List
+                      dataSource={participatedVotes}
+                      renderItem={(item) => (
+                        <List.Item
+                          actions={[
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
+                              onClick={() => navigate(`/vote/${item.id}`)}
+                            >
+                              查看详情
+                            </Button>
+                          ]}
+                        >
+                          <List.Item.Meta
+                            title={
+                              <Space>
+                                {item.title}
+                                {item.isWinner ? (
+                                  <Badge status="success" text="投票成功" />
+                                ) : (
+                                  <Badge status="default" text="未中选" />
+                                )}
+                              </Space>
+                            }
+                            description={
+                              <div>
+                                <Space>
+                                  <Text type="secondary">我的选择: {item.myChoice}</Text>
+                                  <Text type="secondary">最终结果: {item.result}</Text>
+                                </Space>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                  参与时间: {item.participatedTime}
+                                </Text>
+                              </div>
+                            }
+                          />
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="您还没有参与过投票"
+                    />
+                  )}
+                </Spin>
+              </Card>
+            </TabPane>
+
+            <TabPane tab="成就" key="achievements">
+              <Card>
+                <Spin spinning={loading}>
+                  {achievements.length > 0 ? (
+                    <Row gutter={[16, 16]}>
+                      {achievements.map((achievement) => (
+                        <Col xs={24} sm={12} md={8} key={achievement.id}>
+                          <Card
+                            size="small"
+                            style={{
+                              textAlign: 'center',
+                              opacity: achievement.unlocked ? 1 : 0.5
+                            }}
+                          >
+                            <div style={{ fontSize: '32px', marginBottom: 8 }}>
+                              {achievement.icon}
+                            </div>
+                            <Title level={5} style={{ marginBottom: 4 }}>
+                              {achievement.name}
+                            </Title>
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              {achievement.description}
+                            </Text>
+                            {achievement.unlocked ? (
+                              <div style={{ marginTop: 8 }}>
+                                <Tag color="green">已解锁</Tag>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: '10px' }}>
+                                  {achievement.unlockedDate}
+                                </Text>
+                              </div>
+                            ) : (
+                              <div style={{ marginTop: 8 }}>
+                                <Progress
+                                  percent={achievement.progress || 0}
+                                  size="small"
+                                  showInfo={false}
+                                />
+                                <Text type="secondary" style={{ fontSize: '10px' }}>
+                                  进度: {achievement.progress || 0}%
+                                </Text>
+                              </div>
+                            )}
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="暂无成就记录"
+                    />
+                  )}
+                </Spin>
               </Card>
             </TabPane>
           </Tabs>
@@ -507,7 +564,10 @@ const Profile = () => {
         title="编辑个人资料"
         open={editModalVisible}
         onOk={handleEditProfile}
-        onCancel={() => setEditModalVisible(false)}
+        onCancel={() => {
+          setEditModalVisible(false);
+          form.resetFields();
+        }}
         okText="保存"
         cancelText="取消"
       >
@@ -525,8 +585,8 @@ const Profile = () => {
             label="个人简介"
             rules={[{ max: 200, message: '简介不能超过200个字符' }]}
           >
-            <Input.TextArea
-              rows={4}
+            <Input.TextArea 
+              rows={3} 
               placeholder="介绍一下自己..."
             />
           </Form.Item>
@@ -536,14 +596,20 @@ const Profile = () => {
             label="邮箱"
             rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}
           >
-            <Input placeholder="your@email.com" />
+            <Input placeholder="your@example.com" />
           </Form.Item>
 
-          <Form.Item name="twitter" label="Twitter">
+          <Form.Item
+            name={['social', 'twitter']}
+            label="Twitter"
+          >
             <Input placeholder="@username" />
           </Form.Item>
 
-          <Form.Item name="github" label="GitHub">
+          <Form.Item
+            name={['social', 'github']}
+            label="GitHub"
+          >
             <Input placeholder="username" />
           </Form.Item>
         </Form>

@@ -69,7 +69,7 @@ function App() {
               onToggleTheme={toggleTheme}
             />
             
-            <Layout>
+            <Layout style={{ marginTop: '64px' }}>
               <Sidebar collapsed={collapsed} />
               
               {/* 移动端遮罩层 */}
@@ -92,7 +92,8 @@ function App() {
               <Layout style={{ 
                 padding: '24px 24px 24px',
                 marginLeft: isMobile ? '0' : (collapsed ? '80px' : '256px'),
-                transition: 'margin-left 0.2s'
+                transition: 'margin-left 0.2s',
+                minHeight: 'calc(100vh - 64px)'
               }}>
                 <Content
                   style={{

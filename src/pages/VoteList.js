@@ -25,11 +25,13 @@ import {
   ClockCircleOutlined,
   TrophyOutlined,
   FilterOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { optimizedSelectProps } from '../utils/errorHandler';
+import { getContract } from '../utils/contractUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -37,7 +39,7 @@ const { Option } = Select;
 const VoteList = () => {
   const navigate = useNavigate();
   const { isConnected } = useWallet();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [votes, setVotes] = useState([]);
   const [filteredVotes, setFilteredVotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,98 +49,98 @@ const VoteList = () => {
   const [pageSize] = useState(8);
 
   useEffect(() => {
-    loadVotes();
-  }, []);
+    if (isConnected) {
+      loadVotes();
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     filterVotes();
   }, [votes, searchTerm, statusFilter, typeFilter]);
 
+  // 监听页面焦点变化，当页面重新获得焦点时刷新数据
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isConnected) {
+        loadVotes();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [isConnected]);
+
   const loadVotes = async () => {
     setLoading(true);
     try {
-      // 模拟API调用获取投票列表
-      setTimeout(() => {
-        const mockVotes = [
-          {
-            id: 1,
-            title: '2024年度最佳区块链项目投票',
-            description: '选出您认为最优秀的区块链项目，包括DeFi、NFT、Layer2等各个赛道',
-            creator: '0x1234...5678',
-            status: 'active',
-            type: 'single',
-            startTime: '2024-01-10',
-            endTime: '2024-01-20',
-            participants: 89,
-            totalVotes: 156,
-            options: ['Ethereum', 'Polygon', 'Solana', 'Avalanche'],
-            anonymous: false,
-            tags: ['区块链', '项目评选']
-          },
-          {
-            id: 2,
-            title: '社区治理提案 #001',
-            description: '关于更新投票规则的重要提案，涉及投票权重、时间限制等关键参数调整',
-            creator: '0xabcd...efgh',
-            status: 'active',
-            type: 'single',
-            startTime: '2024-01-15',
-            endTime: '2024-01-18',
-            participants: 234,
-            totalVotes: 289,
-            options: ['赞成', '反对', '弃权'],
-            anonymous: true,
-            tags: ['治理', '规则']
-          },
-          {
-            id: 3,
-            title: 'DeFi协议安全审计结果投票',
-            description: '对最新完成的安全审计结果进行社区投票确认',
-            creator: '0x9876...5432',
-            status: 'completed',
-            type: 'multiple',
-            startTime: '2024-01-05',
-            endTime: '2024-01-15',
-            participants: 567,
-            totalVotes: 892,
-            options: ['接受审计结果', '要求重新审计', '延期讨论'],
-            anonymous: false,
-            tags: ['DeFi', '安全审计']
-          },
-          {
-            id: 4,
-            title: 'NFT市场发展方向讨论',
-            description: '探讨NFT市场未来的发展方向和重点关注领域',
-            creator: '0x5555...7777',
-            status: 'pending',
-            type: 'multiple',
-            startTime: '2024-01-25',
-            endTime: '2024-02-01',
-            participants: 0,
-            totalVotes: 0,
-            options: ['艺术NFT', '游戏NFT', '实用NFT', '元宇宙NFT'],
-            anonymous: true,
-            tags: ['NFT', '市场']
-          },
-          {
-            id: 5,
-            title: 'Layer2扩容方案选择',
-            description: '为项目选择最适合的Layer2扩容解决方案',
-            creator: '0x3333...9999',
-            status: 'active',
-            type: 'single',
-            startTime: '2024-01-12',
-            endTime: '2024-01-22',
-            participants: 156,
-            totalVotes: 203,
-            options: ['Optimism', 'Arbitrum', 'Polygon', 'zkSync'],
-            anonymous: false,
-            tags: ['Layer2', '扩容']
+      console.log('开始加载投票列表...');
+      
+      //从智能合约获取投票列表
+      const contract = await getContract();
+      console.log('合约实例获取成功:', contract.target);
+      
+      const voteCount = await contract.voteCount();
+      console.log('投票总数:', Number(voteCount));
+      
+      const votesList = [];
+      
+      for (let i = 0; i < voteCount; i++) {
+        try {
+          console.log(`正在获取投票 ${i} 的信息...`);
+          const voteInfo = await contract.getVoteInfo(i);
+          const voteResults = await contract.getVoteResults(i);
+          
+          // 将枚举值转换为字符串
+          const statusMap = ['active', 'ended', 'cancelled'];
+          const typeMap = ['single', 'multi'];
+          
+          // 获取时间戳（毫秒）
+          const startTime = Number(voteInfo.startTime) * 1000;
+          const endTime = Number(voteInfo.endTime) * 1000;
+          const currentTime = Date.now();
+          
+          // 根据时间和合约状态判断实际状态
+          let actualStatus = statusMap[voteInfo.status];
+          if (voteInfo.status === 0) { // 合约状态为Active
+            if (currentTime < startTime) {
+              actualStatus = 'pending'; // 未开始
+            } else if (currentTime > endTime) {
+              actualStatus = 'ended'; // 已结束
+            } else {
+              actualStatus = 'active'; // 进行中
+            }
           }
-        ];
-        setVotes(mockVotes);
-        setLoading(false);
-      }, 1000);
+          
+          const voteData = {
+            id: Number(voteInfo.id),
+            title: voteInfo.title,
+            description: voteInfo.description,
+            creator: voteInfo.creator,
+            status: actualStatus,
+            type: typeMap[voteInfo.voteType],
+            startTime: new Date(startTime).toLocaleDateString(),
+            endTime: new Date(endTime).toLocaleDateString(),
+            startTimestamp: startTime,
+            endTimestamp: endTime,
+            participants: Number(voteInfo.totalVoters),
+            totalVotes: voteResults.reduce((sum, count) => sum + Number(count), 0),
+            options: voteInfo.options,
+            anonymous: false, // 合约中没有这个字段，设为默认值
+            tags: [] // 合约中没有这个字段，设为默认值
+          };
+          
+          console.log(`投票 ${i} 信息:`, voteData);
+          votesList.push(voteData);
+        } catch (voteError) {
+          console.error(`获取投票 ${i} 信息失败:`, voteError);
+          // 跳过有问题的投票，继续处理其他投票
+        }
+      }
+
+      
+      console.log('成功加载投票列表:', votesList);
+      setVotes(votesList);
+      setLoading(false);
     } catch (error) {
       console.error('加载投票列表失败:', error);
       setLoading(false);
@@ -163,7 +165,7 @@ const VoteList = () => {
       filtered = filtered.filter(vote =>
         vote.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vote.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vote.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (vote.tags && vote.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
       );
     }
 
@@ -174,7 +176,8 @@ const VoteList = () => {
   const getStatusConfig = (status) => {
     const configs = {
       'active': { color: 'green', text: '进行中', icon: <ClockCircleOutlined /> },
-      'completed': { color: 'blue', text: '已结束', icon: <TrophyOutlined /> },
+      'ended': { color: 'blue', text: '已结束', icon: <TrophyOutlined /> },
+      'cancelled': { color: 'red', text: '已取消', icon: <ExclamationCircleOutlined /> },
       'pending': { color: 'orange', text: '未开始', icon: <CalendarOutlined /> }
     };
     return configs[status] || configs['pending'];
@@ -185,12 +188,12 @@ const VoteList = () => {
   };
 
   const calculateProgress = (vote) => {
-    if (vote.status === 'completed') return 100;
+    if (vote.status === 'ended' || vote.status === 'cancelled') return 100;
     if (vote.status === 'pending') return 0;
     
-    const now = new Date();
-    const start = new Date(vote.startTime);
-    const end = new Date(vote.endTime);
+    const now = Date.now();
+    const start = vote.startTimestamp;
+    const end = vote.endTimestamp;
     const total = end - start;
     const elapsed = now - start;
     
@@ -245,7 +248,7 @@ const VoteList = () => {
                   {vote.anonymous && <Tag color="purple">匿名</Tag>}
                 </Space>
                 <Space wrap>
-                  {vote.tags.map(tag => (
+                  {vote.tags && vote.tags.map(tag => (
                     <Tag key={tag} color="blue" style={{ fontSize: '10px' }}>
                       {tag}
                     </Tag>
@@ -292,6 +295,30 @@ const VoteList = () => {
                     />
                   </div>
                 )}
+                {vote.status === 'pending' && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      投票状态
+                    </Text>
+                    <div style={{ padding: '4px 0' }}>
+                      <Text type="secondary">
+                        投票将于 {new Date(vote.startTimestamp).toLocaleString()} 开始
+                      </Text>
+                    </div>
+                  </div>
+                )}
+                {(vote.status === 'ended' || vote.status === 'cancelled') && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      投票状态
+                    </Text>
+                    <div style={{ padding: '4px 0' }}>
+                      <Text type="secondary">
+                        {vote.status === 'ended' ? '投票已结束' : '投票已取消'}
+                      </Text>
+                    </div>
+                  </div>
+                )}
               </Space>
             }
           />
@@ -330,8 +357,9 @@ const VoteList = () => {
             >
               <Option value="all">全部状态</Option>
               <Option value="active">进行中</Option>
-              <Option value="completed">已结束</Option>
+              <Option value="ended">已结束</Option>
               <Option value="pending">未开始</Option>
+              <Option value="cancelled">已取消</Option>
             </Select>
           </Col>
           <Col xs={12} sm={6} md={4}>
@@ -344,7 +372,7 @@ const VoteList = () => {
             >
               <Option value="all">全部类型</Option>
               <Option value="single">单选投票</Option>
-              <Option value="multiple">多选投票</Option>
+              <Option value="multi">多选投票</Option>
             </Select>
           </Col>
           <Col xs={24} sm={12} md={8}>
@@ -355,6 +383,7 @@ const VoteList = () => {
               <Button
                 icon={<FilterOutlined />}
                 onClick={loadVotes}
+                loading={loading}
               >
                 刷新
               </Button>
@@ -401,8 +430,9 @@ const VoteList = () => {
             description={
               searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                 ? '没有找到符合条件的投票'
-                : '暂无投票数据'
+                : loading ? '正在加载投票数据...' : '暂无投票数据'
             }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
       </Spin>

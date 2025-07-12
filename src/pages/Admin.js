@@ -20,7 +20,9 @@ import {
   List,
   Avatar,
   Popconfirm,
-  Badge
+  Badge,
+  Empty,
+  Spin
 } from 'antd';
 import {
   UserOutlined,
@@ -49,14 +51,26 @@ const Admin = () => {
   const [form] = Form.useForm();
   
   // 数据状态
-  const [systemStats, setSystemStats] = useState({});
+  const [systemStats, setSystemStats] = useState({
+    totalUsers: 0,
+    totalVotes: 0,
+    activeVotes: 0,
+    totalTransactions: 0
+  });
   const [users, setUsers] = useState([]);
   const [permissions, setPermissions] = useState([]);
-  const [systemSettings, setSystemSettings] = useState({});
+  const [systemSettings, setSystemSettings] = useState({
+    votingEnabled: true,
+    minVotingPeriod: 24,
+    maxVotingPeriod: 720,
+    maxOptionsPerVote: 10,
+    enableAnonymousVoting: true,
+    requireEmailVerification: false
+  });
   const [auditLogs, setAuditLogs] = useState([]);
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && isAdmin()) {
       loadAdminData();
     }
   }, [isConnected]);
@@ -64,120 +78,56 @@ const Admin = () => {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      // 模拟管理员数据加载
-      setTimeout(() => {
-        setSystemStats({
-          totalUsers: 1234,
-          totalVotes: 156,
-          activeVotes: 23,
-          totalTransactions: 5678
-        });
+      // TODO: 从智能合约获取系统统计数据
+      // const contract = getContract();
+      // const totalUsers = await contract.getTotalUsers();
+      // const totalVotes = await contract.getTotalVotes();
+      // const activeVotes = await contract.getActiveVotes();
+      // const totalTransactions = await contract.getTotalTransactions();
+      
+      // setSystemStats({
+      //   totalUsers: totalUsers.toNumber(),
+      //   totalVotes: totalVotes.toNumber(),
+      //   activeVotes: activeVotes.toNumber(),
+      //   totalTransactions: totalTransactions.toNumber()
+      // });
 
-        setUsers([
-          {
-            id: 1,
-            address: '0x1234567890abcdef1234567890abcdef12345678',
-            role: 'admin',
-            status: 'active',
-            joinDate: '2024-01-01',
-            lastActive: '2024-01-15',
-            votesCreated: 12,
-            votesParticipated: 45
-          },
-          {
-            id: 2,
-            address: '0xabcdef1234567890abcdef1234567890abcdef12',
-            role: 'moderator',
-            status: 'active',
-            joinDate: '2024-01-05',
-            lastActive: '2024-01-14',
-            votesCreated: 8,
-            votesParticipated: 23
-          },
-          {
-            id: 3,
-            address: '0x9876543210fedcba9876543210fedcba98765432',
-            role: 'user',
-            status: 'banned',
-            joinDate: '2024-01-10',
-            lastActive: '2024-01-12',
-            votesCreated: 2,
-            votesParticipated: 5
-          }
-        ]);
+      // TODO: 获取用户列表
+      // const usersList = await contract.getAllUsers();
+      // setUsers(usersList.map(user => ({
+      //   id: user.id.toNumber(),
+      //   address: user.address,
+      //   role: user.role,
+      //   status: user.status,
+      //   joinDate: new Date(user.joinDate * 1000).toLocaleDateString(),
+      //   lastActive: new Date(user.lastActive * 1000).toLocaleDateString(),
+      //   votesCreated: user.votesCreated.toNumber(),
+      //   votesParticipated: user.votesParticipated.toNumber()
+      // })));
 
-        setPermissions([
-          {
-            id: 1,
-            name: '创建投票',
-            description: '允许用户创建新的投票',
-            enabled: true,
-            requiredRole: 'user'
-          },
-          {
-            id: 2,
-            name: '管理投票',
-            description: '允许编辑和删除投票',
-            enabled: true,
-            requiredRole: 'moderator'
-          },
-          {
-            id: 3,
-            name: '系统管理',
-            description: '访问系统管理功能',
-            enabled: true,
-            requiredRole: 'admin'
-          }
-        ]);
+      // TODO: 获取权限配置
+      // const permissionsList = await contract.getPermissions();
+      // setPermissions(permissionsList);
 
-        setSystemSettings({
-          votingEnabled: true,
-          minVotingPeriod: 24,
-          maxVotingPeriod: 720,
-          maxOptionsPerVote: 10,
-          enableAnonymousVoting: true,
-          requireEmailVerification: false
-        });
+      // TODO: 获取审计日志
+      // const logs = await contract.getAuditLogs(50); // 获取最近50条日志
+      // setAuditLogs(logs);
 
-        setAuditLogs([
-          {
-            id: 1,
-            user: '0x1234...5678',
-            action: '创建投票',
-            details: '创建了投票 "2024年度最佳区块链项目"',
-            timestamp: '2024-01-15T10:30:00Z',
-            status: 'success'
-          },
-          {
-            id: 2,
-            user: '0xabcd...efgh',
-            action: '参与投票',
-            details: '参与投票 "社区治理提案 #001"',
-            timestamp: '2024-01-15T10:25:00Z',
-            status: 'success'
-          },
-          {
-            id: 3,
-            user: '0x9876...5432',
-            action: '权限修改',
-            details: '用户角色被修改为 moderator',
-            timestamp: '2024-01-15T10:20:00Z',
-            status: 'warning'
-          }
-        ]);
-
-        setLoading(false);
-      }, 1000);
+      setLoading(false);
     } catch (error) {
       console.error('加载管理数据失败:', error);
+      message.error('加载管理数据失败');
       setLoading(false);
     }
   };
 
   const isAdmin = () => {
-    // 这里应该检查用户是否为管理员
-    // 暂时返回 true 用于演示
-    return true;
+    // TODO: 从智能合约检查用户是否为管理员
+    // const contract = getContract();
+    // return await contract.isAdmin(account);
+    
+    // 临时返回 false，需要实际的权限检查
+    return false;
   };
 
   const formatAddress = (address) => {
@@ -221,18 +171,29 @@ const Admin = () => {
       const values = await form.validateFields();
       console.log('Modal values:', values);
       
-      // 这里处理实际的操作
+      // TODO: 调用智能合约执行用户操作
+      // const contract = getContract();
+      // if (modalType === 'add') {
+      //   await contract.addUser(values.address, values.role, values.status);
+      // } else if (modalType === 'edit') {
+      //   await contract.updateUser(values.id, values.role, values.status);
+      // }
+      
       message.success('操作成功');
       setModalVisible(false);
       form.resetFields();
       loadAdminData();
     } catch (error) {
       console.error('操作失败:', error);
+      message.error('操作失败，请重试');
     }
   };
 
   const handlePermissionToggle = (permission) => {
-    // 切换权限状态
+    // TODO: 调用智能合约切换权限状态
+    // const contract = getContract();
+    // await contract.togglePermission(permission.id, !permission.enabled);
+    
     const newPermissions = permissions.map(p => 
       p.id === permission.id ? { ...p, enabled: !p.enabled } : p
     );
@@ -306,6 +267,7 @@ const Admin = () => {
           <Popconfirm
             title="确定要删除这个用户吗？"
             onConfirm={() => {
+              // TODO: 调用智能合约删除用户
               message.success('用户已删除');
               loadAdminData();
             }}
@@ -357,6 +319,7 @@ const Admin = () => {
                   title="总用户数"
                   value={systemStats.totalUsers}
                   prefix={<UserOutlined />}
+                  loading={loading}
                 />
               </Card>
             </Col>
@@ -366,6 +329,7 @@ const Admin = () => {
                   title="总投票数"
                   value={systemStats.totalVotes}
                   prefix={<BarChartOutlined />}
+                  loading={loading}
                 />
               </Card>
             </Col>
@@ -375,6 +339,7 @@ const Admin = () => {
                   title="进行中投票"
                   value={systemStats.activeVotes}
                   prefix={<BarChartOutlined />}
+                  loading={loading}
                 />
               </Card>
             </Col>
@@ -384,39 +349,49 @@ const Admin = () => {
                   title="总交易数"
                   value={systemStats.totalTransactions}
                   prefix={<BarChartOutlined />}
+                  loading={loading}
                 />
               </Card>
             </Col>
           </Row>
 
           <Card title="最新审计日志">
-            <List
-              dataSource={auditLogs.slice(0, 10)}
-              renderItem={(log) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
-                    title={
-                      <Space>
-                        <Text>{formatAddress(log.user)}</Text>
-                        <Tag color={log.status === 'success' ? 'green' : 'orange'}>
-                          {log.action}
-                        </Tag>
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        <Text type="secondary">{log.details}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {new Date(log.timestamp).toLocaleString()}
-                        </Text>
-                      </div>
-                    }
-                  />
-                </List.Item>
+            <Spin spinning={loading}>
+              {auditLogs.length > 0 ? (
+                <List
+                  dataSource={auditLogs.slice(0, 10)}
+                  renderItem={(log) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        avatar={<Avatar icon={<UserOutlined />} />}
+                        title={
+                          <Space>
+                            <Text>{formatAddress(log.user)}</Text>
+                            <Tag color={log.status === 'success' ? 'green' : 'orange'}>
+                              {log.action}
+                            </Tag>
+                          </Space>
+                        }
+                        description={
+                          <div>
+                            <Text type="secondary">{log.details}</Text>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              {new Date(log.timestamp).toLocaleString()}
+                            </Text>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="暂无审计日志"
+                />
               )}
-            />
+            </Spin>
           </Card>
         </TabPane>
 
@@ -438,6 +413,12 @@ const Admin = () => {
               dataSource={users}
               rowKey="id"
               loading={loading}
+              locale={{
+                emptyText: <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="暂无用户数据"
+                />
+              }}
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
@@ -450,32 +431,41 @@ const Admin = () => {
 
         <TabPane tab="权限管理" key="permissions">
           <Card title="权限设置">
-            <List
-              dataSource={permissions}
-              renderItem={(permission) => (
-                <List.Item
-                  actions={[
-                    <Switch
-                      checked={permission.enabled}
-                      onChange={() => handlePermissionToggle(permission)}
-                    />
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={permission.name}
-                    description={
-                      <div>
-                        <Text type="secondary">{permission.description}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          需要角色: {getRoleTag(permission.requiredRole)}
-                        </Text>
-                      </div>
-                    }
-                  />
-                </List.Item>
+            <Spin spinning={loading}>
+              {permissions.length > 0 ? (
+                <List
+                  dataSource={permissions}
+                  renderItem={(permission) => (
+                    <List.Item
+                      actions={[
+                        <Switch
+                          checked={permission.enabled}
+                          onChange={() => handlePermissionToggle(permission)}
+                        />
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={permission.name}
+                        description={
+                          <div>
+                            <Text type="secondary">{permission.description}</Text>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              需要角色: {getRoleTag(permission.requiredRole)}
+                            </Text>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="暂无权限配置"
+                />
               )}
-            />
+            </Spin>
           </Card>
         </TabPane>
 
@@ -543,7 +533,12 @@ const Admin = () => {
               </Row>
 
               <Form.Item>
-                <Button type="primary">保存设置</Button>
+                <Button type="primary" onClick={() => {
+                  // TODO: 保存系统设置到智能合约
+                  message.success('设置已保存');
+                }}>
+                  保存设置
+                </Button>
               </Form.Item>
             </Form>
           </Card>
