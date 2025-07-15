@@ -162,42 +162,9 @@ A: 确保账户有足够的ETH用于gas费用
 ### Q: 网络错误
 A: 确保Hardhat节点正在运行并且MetaMask连接到正确的网络
 
-## 项目结构
-
-```
-de-vote/
-├── contracts/              # 智能合约
-│   ├── DeVote.sol          # 主合约
-│   └── Lock.sol            # 示例合约
-├── scripts/                # 部署脚本
-│   └── deploy.js           # 部署脚本
-├── test/                   # 测试文件
-│   ├── DeVote.js           # 合约测试
-│   └── Lock.js             # 示例测试
-├── src/                    # 前端源码
-│   ├── components/         # React组件
-│   ├── contexts/           # React上下文
-│   ├── pages/              # 页面组件
-│   ├── utils/              # 工具函数
-│   └── contracts/          # 合约ABI和地址
-├── hardhat.config.js       # Hardhat配置
-└── package.json           # 项目依赖
-```
-
 ## 安全注意事项
 
 1. 本项目仅用于学习和测试
 2. 不要在生产环境中使用测试私钥
 3. 部署到主网前请进行充分测试
 4. 考虑实施额外的安全措施
-
-## 贡献指南
-
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 发起Pull Request
-
-## 许可证
-
-MIT License 
