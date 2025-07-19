@@ -240,8 +240,7 @@
 
 /* 输入框样式 */
 .ant-input,
-.ant-select-selector,
-.ant-picker {
+.ant-select-selector {
   border-radius: 8px;
   border: 2px solid #f0f2f5;
   transition: all 0.3s ease;
@@ -252,9 +251,7 @@
 .ant-input:focus,
 .ant-input:hover,
 .ant-select-focused .ant-select-selector,
-.ant-select-selector:hover,
-.ant-picker:hover,
-.ant-picker-focused {
+.ant-select-selector:hover {
   border-color: #1890ff;
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
   z-index: 2;
@@ -287,7 +284,6 @@
 
 /* 确保所有选择器下拉框正确显示 */
 .ant-select-dropdown,
-.ant-picker-dropdown,
 .ant-cascader-dropdown,
 .ant-tooltip,
 .ant-popover {
@@ -689,17 +685,10 @@
   z-index: 1003 !important;
 }
 
-.vote-time-picker .ant-picker-dropdown {
-  z-index: 1050 !important;
-}
-
-/* 确保时间选择器面板在所有层级之上 */
-.ant-picker-dropdown .ant-picker-panel-container {
-  z-index: 1050 !important;
-}
-
-.ant-picker-time-panel {
-  z-index: 1050 !important;
+/* 时间输入框验证样式 */
+.ant-form-item-has-error .ant-input {
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1);
 }
 
 /* 钱包信息容器优化 */
@@ -708,74 +697,64 @@
   max-width: 120px;
 }
 
-/* 日期选择器下拉框样式 */
-.ant-picker-dropdown {
-  z-index: 1055 !important;
+/* 时间输入框特殊样式 */
+.create-vote-form .time-input {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  letter-spacing: 1px;
 }
 
-.ant-picker-dropdown .ant-picker-panel-container {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
+.create-vote-form .time-input:focus {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 立即开始开关样式 */
+.ant-switch {
+  background: #f0f2f5;
   border: 1px solid #d9d9d9;
+  transition: all 0.3s;
 }
 
-/* CreateVote页面日期选择器特殊样式 */
-.vote-time-picker .ant-picker-dropdown {
-  z-index: 1060 !important;
+.ant-switch-checked {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  border-color: #1890ff;
 }
 
-/* 确保日期选择器面板在正确位置显示 */
-.ant-picker-dropdown .ant-picker-panel {
-  border-radius: 8px;
+.ant-switch:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 时间选择面板样式 */
-.ant-picker-time-panel {
-  border-radius: 8px;
+/* 开关内部文字样式 */
+.ant-switch-inner {
+  font-size: 11px;
+  font-weight: 500;
 }
 
-/* 固定日期选择器样式 - 解决漂移问题 */
-.fixed-date-picker .ant-picker-dropdown {
-  position: fixed !important;
-  z-index: 9999 !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  max-height: 80vh !important;
-  overflow-y: auto !important;
-  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+/* 确保DatePicker的父容器有正确的定位 */
+.create-vote-form .ant-form-item {
+  position: relative;
 }
 
-.fixed-date-picker .ant-picker-panel-container {
-  position: relative !important;
-  z-index: 10000 !important;
-}
-
-.fixed-date-picker .ant-picker-range-separator {
-  position: relative !important;
-  z-index: 10001 !important;
-}
-
-/* 创建投票页面的特殊样式 */
 .create-vote-form .ant-picker-dropdown {
-  position: fixed !important;
   z-index: 9999 !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  max-height: 80vh !important;
-  overflow-y: auto !important;
 }
 
-/* 防止日期选择器被其他元素遮挡 */
-.ant-picker-range-wrapper {
-  position: relative !important;
-  z-index: 1 !important;
+/* 为DatePicker容器添加相对定位 */
+.create-vote-form .ant-col {
+  position: relative;
 }
 
-/* 确保日期选择器在表单中正确显示 */
-.ant-form-item .ant-picker-dropdown {
-  z-index: 9999 !important;
+/* 时间输入框提示样式 */
+.time-input-hint {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 4px;
+}
+
+.time-format-example {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 

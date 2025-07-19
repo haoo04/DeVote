@@ -89,7 +89,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
           <Space>
             <Avatar 
               size={40} 
-              src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMwLjA0IDEyLjc2TDMxLjk5IDQuNTdMMjguMzIgNy40N0wyNC44OSAxLjAzTDIwLjk5IDUuMzhMMTYgMEwxMS4wMSA1LjM4TDcuMTEgMS4wM0wzLjY4IDcuNDdMMC4wMSA0LjU3TDEuOTYgMTIuNzZMMCA5LjA0SDMyTDMwLjA0IDEyLjc2WiIgZmlsbD0iIzc2NzY3NiIvPgo8L3N2Zz4K"
+              src="/MetaMask.png"
             />
             <div>
               <Text strong>MetaMask</Text>
@@ -108,8 +108,8 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
         >
           <Space>
             <Avatar 
-              size={40} 
-              style={{ backgroundColor: '#3b99fc' }}
+                size={40} 
+                src="/Walletconnect.png"
             >
               WC
             </Avatar>

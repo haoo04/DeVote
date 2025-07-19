@@ -4,7 +4,6 @@ import {
   Form,
   Input,
   Button,
-  DatePicker,
   Select,
   Space,
   Typography,
@@ -21,7 +20,8 @@ import {
   PlusOutlined,
   DeleteOutlined,
   SaveOutlined,
-  EyeOutlined
+  EyeOutlined,
+  PlayCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
@@ -31,7 +31,6 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const CreateVote = () => {
   const navigate = useNavigate();
@@ -40,6 +39,7 @@ const CreateVote = () => {
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState(['', '']);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [immediateStart, setImmediateStart] = useState(false);
 
   const addOption = () => {
     if (options.length >= 10) {
@@ -64,6 +64,22 @@ const CreateVote = () => {
     setOptions(newOptions);
   };
 
+  const handleImmediateStart = (checked) => {
+    setImmediateStart(checked);
+    if (checked) {
+      const now = dayjs().format('YYYY-MM-DD HH:mm');
+      form.setFieldsValue({
+        startTime: now,
+      });
+      message.success('已设置为立即开始');
+    } else {
+      form.setFieldsValue({
+        startTime: ''
+      });
+      message.info('已取消立即开始');
+    }
+  };
+
   const handleSubmit = async (values) => {
     if (!isConnected) {
       message.error('请先连接钱包');
@@ -77,22 +93,36 @@ const CreateVote = () => {
       return;
     }
 
-    // 验证时间范围
-    if (!values.timeRange || values.timeRange.length !== 2) {
-      message.error('请选择投票的开始和结束时间');
+    // 验证时间
+    if (!values.startTime || !values.endTime) {
+      message.error('请输入投票的开始和结束时间');
       return;
     }
 
-    const startTime = values.timeRange[0].valueOf();
-    const endTime = values.timeRange[1].valueOf();
+    // 将字符串时间转换为dayjs对象并验证
+    const startDateTime = dayjs(values.startTime, 'YYYY-MM-DD HH:mm');
+    const endDateTime = dayjs(values.endTime, 'YYYY-MM-DD HH:mm');
     
-    if (startTime <= Date.now()) {
+    if (!startDateTime.isValid() || !endDateTime.isValid()) {
+      message.error('请输入有效的时间格式');
+      return;
+    }
+
+    const startTime = startDateTime.valueOf();
+    const endTime = endDateTime.valueOf();
+    
+    if (!immediateStart && startTime <= Date.now()) {
       message.error('开始时间必须晚于当前时间');
       return;
     }
 
     if (endTime <= startTime) {
       message.error('结束时间必须晚于开始时间');
+      return;
+    }
+
+    if (endDateTime.diff(startDateTime, 'minute') < 30) {
+      message.error('投票持续时间至少需要30分钟');
       return;
     }
 
@@ -172,27 +202,30 @@ const CreateVote = () => {
           <Col span={12}>
             <Text strong>开始时间：</Text>
             <Text>
-              {values.timeRange && values.timeRange[0] 
-                ? values.timeRange[0].format('YYYY-MM-DD HH:mm') 
-                : '未设置'}
+              {values.startTime || '未设置'}
             </Text>
           </Col>
           <Col span={12}>
             <Text strong>结束时间：</Text>
             <Text>
-              {values.timeRange && values.timeRange[1] 
-                ? values.timeRange[1].format('YYYY-MM-DD HH:mm') 
-                : '未设置'}
+              {values.endTime || '未设置'}
             </Text>
           </Col>
         </Row>
         
-        {values.timeRange && values.timeRange[0] && values.timeRange[1] && (
+        {values.startTime && values.endTime && (
           <Row style={{ marginTop: 8 }}>
             <Col span={24}>
               <Text strong>投票持续时间：</Text>
               <Text>
-                {Math.round(values.timeRange[1].diff(values.timeRange[0], 'hour', true))} 小时
+                {(() => {
+                  const startDateTime = dayjs(values.startTime, 'YYYY-MM-DD HH:mm');
+                  const endDateTime = dayjs(values.endTime, 'YYYY-MM-DD HH:mm');
+                  if (startDateTime.isValid() && endDateTime.isValid()) {
+                    return Math.round(endDateTime.diff(startDateTime, 'hour', true)) + ' 小时';
+                  }
+                  return '请输入正确的时间格式';
+                })()}
               </Text>
             </Col>
           </Row>
@@ -318,87 +351,109 @@ const CreateVote = () => {
               {/* 时间设置 */}
               <Title level={4}>时间设置</Title>
               
-              <Form.Item
-                name="timeRange"
-                label="投票时间"
-                rules={[
-                  { required: true, message: '请选择投票的开始和结束时间' },
-                  {
-                    validator: (_, value) => {
-                      if (!value || value.length !== 2) {
-                        return Promise.reject(new Error('请选择完整的时间范围'));
-                      }
-                      
-                      const startTime = value[0];
-                      const endTime = value[1];
-                      const now = dayjs();
-                      
-                      if (startTime.isBefore(now.add(1, 'minute'))) {
-                        return Promise.reject(new Error('开始时间必须至少比当前时间晚1分钟'));
-                      }
-                      
-                      if (endTime.isBefore(startTime)) {
-                        return Promise.reject(new Error('结束时间不能早于开始时间'));
-                      }
-                      
-                      if (endTime.diff(startTime, 'minute') < 30) {
-                        return Promise.reject(new Error('投票持续时间至少需要30分钟'));
-                      }
-                      
-                      return Promise.resolve();
-                    }
-                  }
-                ]}
-                tooltip="设置投票的开始和结束时间，投票只能在此时间范围内进行"
-              >
-                <RangePicker
-                  showTime={{
-                    format: 'HH:mm',
-                    minuteStep: 15
-                  }}
-                  format="YYYY-MM-DD HH:mm"
-                  placeholder={['选择开始时间', '选择结束时间']}
-                  style={{ width: '100%' }}
-                  getPopupContainer={(trigger) => trigger.parentElement}
-                  dropdownClassName="fixed-date-picker"
-                  popupStyle={{ 
-                    position: 'fixed',
-                    zIndex: 9999
-                  }}
-                  disabledDate={(current) => {
-                    // 禁用过去的日期
-                    return current && current < dayjs().startOf('day');
-                  }}
-                  disabledTime={(current, type) => {
-                    const now = dayjs();
-                    if (type === 'start') {
-                      // 如果是今天，禁用过去的小时和分钟
-                      if (current && current.isSame(now, 'day')) {
-                        return {
-                          disabledHours: () => {
-                            const hours = [];
-                            for (let i = 0; i < now.hour(); i++) {
-                              hours.push(i);
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Form.Item
+                  name="immediateStart"
+                  label="立即开始"
+                  valuePropName="checked"
+                  initialValue={false}
+                  tooltip="开启后投票将立即开始，只需设置结束时间"
+                >
+                  <Switch 
+                    onChange={handleImmediateStart}
+                    checkedChildren="开启"
+                    unCheckedChildren="关闭"
+                  />
+                </Form.Item>
+                
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="startTime"
+                      label="开始时间"
+                      rules={[
+                        { required: true, message: '请输入开始时间' },
+                        {
+                          pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+                          message: '时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式'
+                        },
+                        {
+                          validator: (_, value) => {
+                            if (!value) return Promise.resolve();
+                            
+                            // 验证日期格式是否正确
+                            const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm');
+                            if (!dateTime.isValid()) {
+                              return Promise.reject(new Error('请输入有效的日期时间'));
                             }
-                            return hours;
-                          },
-                          disabledMinutes: (selectedHour) => {
-                            if (selectedHour === now.hour()) {
-                              const minutes = [];
-                              for (let i = 0; i <= now.minute(); i++) {
-                                minutes.push(i);
-                              }
-                              return minutes;
+                            
+                            const now = dayjs();
+                            
+                            // 如果不是立即开始，验证开始时间
+                            if (!immediateStart && dateTime.isBefore(now.add(1, 'minute'))) {
+                              return Promise.reject(new Error('开始时间必须至少比当前时间晚1分钟'));
                             }
-                            return [];
+                            
+                            return Promise.resolve();
                           }
-                        };
-                      }
-                    }
-                    return {};
-                  }}
-                />
-              </Form.Item>
+                        }
+                      ]}
+                    >
+                      <Input
+                        placeholder="例如: 2025-07-19 09:44"
+                        style={{ width: '100%' }}
+                        disabled={immediateStart}
+                        maxLength={16}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="endTime"
+                      label="结束时间"
+                      rules={[
+                        { required: true, message: '请输入结束时间' },
+                        {
+                          pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+                          message: '时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式'
+                        },
+                        {
+                          validator: (_, value) => {
+                            if (!value) return Promise.resolve();
+                            
+                            // 验证日期格式是否正确
+                            const endDateTime = dayjs(value, 'YYYY-MM-DD HH:mm');
+                            if (!endDateTime.isValid()) {
+                              return Promise.reject(new Error('请输入有效的日期时间'));
+                            }
+                            
+                            const startTimeValue = form.getFieldValue('startTime');
+                            if (startTimeValue) {
+                              const startDateTime = dayjs(startTimeValue, 'YYYY-MM-DD HH:mm');
+                              
+                              if (startDateTime.isValid() && endDateTime.isBefore(startDateTime)) {
+                                return Promise.reject(new Error('结束时间不能早于开始时间'));
+                              }
+                              
+                              if (startDateTime.isValid() && endDateTime.diff(startDateTime, 'minute') < 30) {
+                                return Promise.reject(new Error('投票持续时间至少需要30分钟'));
+                              }
+                            }
+                            
+                            return Promise.resolve();
+                          }
+                        }
+                      ]}
+                    >
+                      <Input
+                        placeholder="例如: 2025-07-20 18:00"
+                        style={{ width: '100%' }}
+                        maxLength={16}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Space>
 
               <Divider />
 

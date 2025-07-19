@@ -97,15 +97,20 @@ const Dashboard = () => {
         const recentVotesList = allVotesInfo
           .sort((a, b) => b.startTime - a.startTime)
           .slice(0, 5)
-          .map(vote => ({
-            id: vote.id,
-            title: vote.title,
-            description: vote.description,
-            status: vote.status,
-            participants: vote.totalVoters,
-            totalVotes: vote.totalVoters,
-            endTime: new Date(vote.endTime).toLocaleDateString()
-          }));
+          .map(vote => {
+            // 直接使用getVoteInfo返回的正确状态，不再需要重复判断
+            return {
+              id: vote.id,
+              title: vote.title,
+              description: vote.description,
+              status: vote.status, // 直接使用已经过时间判断的状态
+              participants: vote.totalVoters,
+              totalVotes: vote.totalVoters,
+              endTime: new Date(vote.endTime).toLocaleDateString(),
+              startTime: vote.startTime,
+              endTimestamp: vote.endTime
+            };
+          });
         
         setRecentVotes(recentVotesList);
 
@@ -118,14 +123,17 @@ const Dashboard = () => {
               const voteInfoResult = await getVoteInfo(voteId);
               if (voteInfoResult.success) {
                 const voteInfo = voteInfoResult.data;
+                // 直接使用getVoteInfo返回的正确状态，不再需要重复判断
                 myVotesList.push({
                   id: voteInfo.id,
                   title: voteInfo.title,
                   description: voteInfo.description,
-                  status: voteInfo.status,
+                  status: voteInfo.status, // 直接使用已经过时间判断的状态
                   participants: voteInfo.totalVoters,
                   totalVotes: voteInfo.totalVoters,
-                  endTime: new Date(voteInfo.endTime).toLocaleDateString()
+                  endTime: new Date(voteInfo.endTime).toLocaleDateString(),
+                  startTime: voteInfo.startTime,
+                  endTimestamp: voteInfo.endTime
                 });
               }
             }
@@ -144,11 +152,31 @@ const Dashboard = () => {
   const getStatusTag = (status) => {
     const statusMap = {
       'active': { color: 'green', text: '进行中' },
+      'ended': { color: 'blue', text: '已结束' },
       'completed': { color: 'blue', text: '已结束' },
-      'pending': { color: 'orange', text: '未开始' }
+      'pending': { color: 'orange', text: '未开始' },
+      'cancelled': { color: 'red', text: '已取消' }
     };
     const config = statusMap[status] || statusMap['pending'];
     return <Tag color={config.color}>{config.text}</Tag>;
+  };
+
+  // 计算投票时间进度
+  const calculateTimeProgress = (item) => {
+    if (item.status === 'ended' || item.status === 'completed' || item.status === 'cancelled') {
+      return 100;
+    }
+    if (item.status === 'pending') {
+      return 0;
+    }
+    
+    const now = Date.now();
+    const start = item.startTime;
+    const end = item.endTimestamp;
+    const total = end - start;
+    const elapsed = now - start;
+    
+    return Math.min(Math.max((elapsed / total) * 100, 0), 100);
   };
 
   const StatCard = ({ title, value, icon, suffix, loading }) => (
@@ -272,9 +300,9 @@ const Dashboard = () => {
                                 <ClockCircleOutlined /> 截止: {item.endTime}
                               </Text>
                             </Space>
-                            {item.status === 'active' && (
+                            {item.status !== 'pending' && (
                               <Progress 
-                                percent={Math.round((item.participants / item.totalVotes) * 100)} 
+                                percent={calculateTimeProgress(item)} 
                                 size="small" 
                                 style={{ marginTop: 8 }}
                               />

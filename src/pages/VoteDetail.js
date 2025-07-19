@@ -75,6 +75,7 @@ const VoteDetail = () => {
       if (result.success) {
         const voteData = result.data;
         console.log('投票详情数据:', voteData);
+        console.log('投票类型 voteType:', voteData.voteType, '类型:', typeof voteData.voteType);
         
         // 根据时间判断实际状态
         const currentTime = Date.now();
@@ -93,7 +94,7 @@ const VoteDetail = () => {
           description: voteData.description,
           creator: voteData.creator,
           status: actualStatus,
-          type: voteData.voteType,
+          type: voteData.voteType, // 这里已经是转换后的字符串 'single' 或 'multi'
           startTime: new Date(voteData.startTime).toISOString(),
           endTime: new Date(voteData.endTime).toISOString(),
           startTimestamp: voteData.startTime,
@@ -168,49 +169,84 @@ const VoteDetail = () => {
       return;
     }
 
-    confirm({
-      title: '确认投票',
-      icon: <ExclamationCircleOutlined />,
-      content: (
-        <div>
-          <p>您选择的选项：</p>
-          <ul>
-            {selectedOptions.map(optionId => {
-              const option = vote.options.find(opt => opt.id === optionId);
-              return <li key={optionId}>{option?.text}</li>;
-            })}
-          </ul>
-          <p style={{ color: '#ff4d4f', marginTop: 16 }}>
-            注意：投票提交后无法修改，请确认您的选择。
-          </p>
-        </div>
-      ),
-      onOk: async () => {
-        setVoting(true);
-        try {
-          console.log('开始投票，投票ID:', id, '选择的选项:', selectedOptions);
-          
-          // 调用智能合约进行投票
-          const result = await castVote(id, selectedOptions);
-          
-          if (result.success) {
-            message.success('投票成功！');
-            setHasVoted(true);
-            loadVoteDetail(); // 重新加载数据
-            console.log('投票成功，交易哈希:', result.txHash);
-          } else {
-            throw new Error(result.error || '投票失败');
-          }
-          
-          setVoting(false);
+    // 检查投票状态
+    if (vote.status !== 'active') {
+      message.error('投票已结束或尚未开始');
+      return;
+    }
 
-        } catch (error) {
-          console.error('投票失败:', error);
-          message.error(`投票失败: ${error.message || '请重试'}`);
-          setVoting(false);
-        }
+    // 检查是否已投过票
+    if (hasVoted) {
+      message.error('您已经参与过此投票');
+      return;
+    }
+
+    console.log('准备投票 - 投票ID:', id, '选择的选项:', selectedOptions, '投票类型:', vote.type);
+    console.log('当前vote对象:', vote);
+    console.log('vote.options:', vote?.options);
+    console.log('vote.options类型:', typeof vote?.options, '是否为数组:', Array.isArray(vote?.options));
+
+    console.log('直接开始投票逻辑...');
+    setVoting(true);
+    
+    try {
+      console.log('开始投票，投票ID:', id, '选择的选项:', selectedOptions);
+      
+      // 验证输入参数
+      if (!id || selectedOptions.length === 0) {
+        throw new Error('投票参数无效');
       }
-    });
+
+      // 确保选项ID是数字类型
+      const normalizedOptions = selectedOptions.map(option => Number(option));
+      console.log('标准化后的选项:', normalizedOptions);
+      
+      // 调用智能合约进行投票
+      const result = await castVote(parseInt(id), normalizedOptions);
+      
+      console.log('投票结果:', result);
+      
+      if (result.success) {
+        message.success('投票成功！');
+        setHasVoted(true);
+        setSelectedOptions([]); // 清空选择
+        await loadVoteDetail(); // 重新加载数据
+        console.log('投票成功，交易哈希:', result.txHash);
+      } else {
+        throw new Error(result.error || '投票失败');
+      }
+      
+    } catch (error) {
+      console.error('投票失败详细信息:', error);
+      let errorMessage = '投票失败';
+      
+      // 根据错误类型提供更友好的错误信息
+      if (error.message.includes('User denied') || error.message.includes('用户拒绝')) {
+        errorMessage = '用户取消了交易';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = '账户余额不足支付Gas费用';
+      } else if (error.message.includes('Vote not found')) {
+        errorMessage = '投票不存在';
+      } else if (error.message.includes('Vote not active')) {
+        errorMessage = '投票已结束或尚未开始';
+      } else if (error.message.includes('Already voted')) {
+        errorMessage = '您已经投过票了';
+      } else if (error.message.includes('Invalid choice')) {
+        errorMessage = '投票选项无效';
+      } else if (error.message.includes('revert')) {
+        // 提取智能合约revert信息
+        const revertMatch = error.message.match(/revert\s+(.+)/);
+        if (revertMatch) {
+          errorMessage = revertMatch[1];
+        }
+      } else {
+        errorMessage = error.message || '请检查网络连接后重试';
+      }
+      
+      message.error(errorMessage);
+    } finally {
+      setVoting(false);
+    }
   };
 
   const getStatusConfig = (status) => {
@@ -303,6 +339,14 @@ const VoteDetail = () => {
 
   const statusConfig = getStatusConfig(vote.status);
 
+  // 添加调试信息
+  console.log('VoteDetail 渲染 - vote对象:', vote);
+  console.log('投票类型 vote.type:', vote.type, '类型:', typeof vote.type);
+  console.log('当前选择的选项:', selectedOptions);
+  console.log('用户是否已投票:', hasVoted);
+  console.log('钱包是否连接:', isConnected);
+  console.log('投票状态:', vote.status);
+
   return (
     <div>
       {/* 投票标题和基本信息 */}
@@ -391,10 +435,18 @@ const VoteDetail = () => {
           <Card title="投票选项">
             {vote.status === 'active' && !hasVoted && isConnected ? (
               <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary">
+                    投票类型：{vote.type === 'single' ? '单选投票（只能选择一个选项）' : '多选投票（可以选择多个选项）'}
+                  </Text>
+                </div>
                 {vote.type === 'single' ? (
                   <Radio.Group
                     value={selectedOptions[0]}
-                    onChange={(e) => setSelectedOptions([e.target.value])}
+                    onChange={(e) => {
+                      console.log('单选投票选择:', e.target.value);
+                      setSelectedOptions([e.target.value]);
+                    }}
                   >
                     <Space direction="vertical" style={{ width: '100%' }}>
                       {vote.options.map(option => (
@@ -407,7 +459,10 @@ const VoteDetail = () => {
                 ) : (
                   <Checkbox.Group
                     value={selectedOptions}
-                    onChange={setSelectedOptions}
+                    onChange={(newSelections) => {
+                      console.log('多选投票选择:', newSelections);
+                      setSelectedOptions(newSelections);
+                    }}
                   >
                     <Space direction="vertical" style={{ width: '100%' }}>
                       {vote.options.map(option => (
@@ -419,16 +474,33 @@ const VoteDetail = () => {
                   </Checkbox.Group>
                 )}
                 
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={handleVote}
-                  loading={voting}
-                  disabled={selectedOptions.length === 0}
-                  style={{ marginTop: 16 }}
-                >
-                  {voting ? '提交中...' : '提交投票'}
-                </Button>
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary">
+                      当前选择：{selectedOptions.length === 0 ? '未选择' : selectedOptions.map(id => {
+                        const option = vote.options.find(opt => opt.id === id);
+                        return option?.text;
+                      }).join(', ')}
+                    </Text>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={handleVote}
+                    loading={voting}
+                    disabled={selectedOptions.length === 0}
+                  >
+                    {voting ? '提交中...' : '提交投票'}
+                  </Button>
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      调试信息 - 选项数量: {selectedOptions.length}, 
+                      投票状态: {vote.status}, 
+                      已投票: {hasVoted ? '是' : '否'}, 
+                      钱包连接: {isConnected ? '是' : '否'}
+                    </Text>
+                  </div>
+                </div>
               </Space>
             ) : (
               <div>
@@ -448,10 +520,26 @@ const VoteDetail = () => {
                   />
                 )}
                 
-                {vote.status !== 'active' && (
+                {vote.status === 'pending' && (
                   <Alert
-                    message={vote.status === 'completed' ? '投票已结束' : '投票尚未开始'}
+                    message="投票尚未开始"
                     type="info"
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+                
+                {vote.status === 'ended' && (
+                  <Alert
+                    message="投票已结束"
+                    type="info"
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+                
+                {vote.status === 'cancelled' && (
+                  <Alert
+                    message="投票已取消"
+                    type="error"
                     style={{ marginBottom: 16 }}
                   />
                 )}

@@ -15,7 +15,6 @@ import {
   Pagination,
   Empty,
   Spin,
-  DatePicker,
   Badge
 } from 'antd';
 import {
@@ -91,7 +90,6 @@ const VoteList = () => {
           const voteResults = await contract.getVoteResults(i);
           
           // 将枚举值转换为字符串
-          const statusMap = ['active', 'ended', 'cancelled'];
           const typeMap = ['single', 'multi'];
           
           // 获取时间戳（毫秒）
@@ -99,9 +97,15 @@ const VoteList = () => {
           const endTime = Number(voteInfo.endTime) * 1000;
           const currentTime = Date.now();
           
-          // 根据时间和合约状态判断实际状态
-          let actualStatus = statusMap[voteInfo.status];
-          if (voteInfo.status === 0) { // 合约状态为Active
+          // 根据时间判断实际状态，不管合约状态如何
+          let actualStatus;
+          const contractStatus = ['active', 'ended', 'cancelled'][voteInfo.status];
+          
+          if (voteInfo.status === 2) { // 合约状态为cancelled
+            actualStatus = 'cancelled';
+          } else if (voteInfo.status === 1) { // 合约状态为ended
+            actualStatus = 'ended';
+          } else { // 合约状态为active (0) 或其他
             if (currentTime < startTime) {
               actualStatus = 'pending'; // 未开始
             } else if (currentTime > endTime) {
@@ -116,7 +120,7 @@ const VoteList = () => {
             title: voteInfo.title,
             description: voteInfo.description,
             creator: voteInfo.creator,
-            status: actualStatus,
+            status: actualStatus, // 使用基于时间判断的实际状态
             type: typeMap[voteInfo.voteType],
             startTime: new Date(startTime).toLocaleDateString(),
             endTime: new Date(endTime).toLocaleDateString(),
@@ -291,7 +295,7 @@ const VoteList = () => {
                     <Progress
                       percent={Math.round(progress)}
                       size="small"
-                      status={progress > 80 ? 'exception' : 'active'}
+                      status="active"
                     />
                   </div>
                 )}
