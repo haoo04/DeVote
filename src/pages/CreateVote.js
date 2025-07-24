@@ -43,7 +43,7 @@ const CreateVote = () => {
 
   const addOption = () => {
     if (options.length >= 10) {
-      message.warning('最多只能添加10个选项');
+      message.warning('At most 10 options can be added');
       return;
     }
     setOptions([...options, '']);
@@ -51,7 +51,7 @@ const CreateVote = () => {
 
   const removeOption = (index) => {
     if (options.length <= 2) {
-      message.warning('至少需要保留2个选项');
+      message.warning('At least 2 options are required');
       return;
     }
     const newOptions = options.filter((_, i) => i !== index);
@@ -71,40 +71,40 @@ const CreateVote = () => {
       form.setFieldsValue({
         startTime: now,
       });
-      message.success('已设置为立即开始');
+      message.success('Set to immediate start');
     } else {
       form.setFieldsValue({
         startTime: ''
       });
-      message.info('已取消立即开始');
+      message.info('Immediate start cancelled');
     }
   };
 
   const handleSubmit = async (values) => {
     if (!isConnected) {
-      message.error('请先连接钱包');
+      message.error('Please connect your wallet');
       return;
     }
 
-    // 验证选项
+    // Validate options
     const validOptions = options.filter(opt => opt.trim() !== '');
     if (validOptions.length < 2) {
-      message.error('至少需要2个有效选项');
+      message.error('At least 2 valid options are required');
       return;
     }
 
-    // 验证时间
+    // Validate time
     if (!values.startTime || !values.endTime) {
-      message.error('请输入投票的开始和结束时间');
+      message.error('Please enter the start and end time of the vote');
       return;
     }
 
-    // 将字符串时间转换为dayjs对象并验证
+    // Convert string time to dayjs object and validate
     const startDateTime = dayjs(values.startTime, 'YYYY-MM-DD HH:mm');
     const endDateTime = dayjs(values.endTime, 'YYYY-MM-DD HH:mm');
     
     if (!startDateTime.isValid() || !endDateTime.isValid()) {
-      message.error('请输入有效的时间格式');
+      message.error('Please enter a valid time format');
       return;
     }
 
@@ -112,23 +112,23 @@ const CreateVote = () => {
     const endTime = endDateTime.valueOf();
     
     if (!immediateStart && startTime <= Date.now()) {
-      message.error('开始时间必须晚于当前时间');
+      message.error('Start time must be later than the current time');
       return;
     }
 
     if (endTime <= startTime) {
-      message.error('结束时间必须晚于开始时间');
+      message.error('End time must be later than the start time');
       return;
     }
 
     if (endDateTime.diff(startDateTime, 'minute') < 30) {
-      message.error('投票持续时间至少需要30分钟');
+      message.error('The vote duration must be at least 30 minutes');
       return;
     }
 
     setLoading(true);
     try {
-      // 准备投票数据
+      // Prepare vote data
       const voteData = {
         title: values.title,
         description: values.description,
@@ -137,24 +137,24 @@ const CreateVote = () => {
         startTime: startTime,
         endTime: endTime,
         isPrivate: values.permissionType === 'private',
-        allowedVoters: [] // 如果是私有投票，这里应该处理允许的投票者列表
+        allowedVoters: [] // If it is a private vote, here should handle the list of allowed voters
       };
 
-      console.log('创建投票数据:', voteData);
+      console.log('Create vote data:', voteData);
 
-      // 调用智能合约创建投票
+      // Call the smart contract to create the vote
       const result = await createVote(voteData);
       
       if (result.success) {
-        message.success('投票创建成功！');
+        message.success('Vote created successfully!');
         navigate('/votes');
       } else {
         throw new Error(result.error);
       }
 
     } catch (error) {
-      console.error('创建投票失败:', error);
-      message.error(`创建投票失败: ${error.message || '请重试'}`);
+      console.error('Failed to create vote:', error);
+      message.error(`Failed to create vote: ${error.message || 'Please try again'}`);
     } finally {
       setLoading(false);
     }
@@ -164,12 +164,12 @@ const CreateVote = () => {
     form.validateFields().then(values => {
       const validOptions = options.filter(opt => opt.trim() !== '');
       if (validOptions.length < 2) {
-        message.error('至少需要2个有效选项才能预览');
+        message.error('At least 2 valid options are required to preview');
         return;
       }
       setPreviewVisible(!previewVisible);
     }).catch(() => {
-      message.error('请完善表单信息');
+      message.error('Please complete the form information');
     });
   };
 
@@ -178,13 +178,13 @@ const CreateVote = () => {
     const validOptions = options.filter(opt => opt.trim() !== '');
 
     return (
-      <Card title="投票预览" style={{ marginTop: 24 }}>
-        <Title level={4}>{values.title || '投票标题'}</Title>
+      <Card title="Vote preview" style={{ marginTop: 24 }}>
+        <Title level={4}>{values.title || 'Vote title'}</Title>
         <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-          {values.description || '投票描述'}
+          {values.description || 'Vote description'}
         </Text>
         
-        <Divider>投票选项</Divider>
+        <Divider>Vote options</Divider>
         <List
           dataSource={validOptions}
           renderItem={(option, index) => (
@@ -197,16 +197,16 @@ const CreateVote = () => {
           )}
         />
 
-        <Divider>时间设置</Divider>
+        <Divider>Time settings</Divider>
         <Row gutter={16}>
           <Col span={12}>
-            <Text strong>开始时间：</Text>
+            <Text strong>Start time:</Text>
             <Text>
               {values.startTime || '未设置'}
             </Text>
           </Col>
           <Col span={12}>
-            <Text strong>结束时间：</Text>
+            <Text strong>End time:</Text>
             <Text>
               {values.endTime || '未设置'}
             </Text>
@@ -216,30 +216,30 @@ const CreateVote = () => {
         {values.startTime && values.endTime && (
           <Row style={{ marginTop: 8 }}>
             <Col span={24}>
-              <Text strong>投票持续时间：</Text>
+              <Text strong>Vote duration:</Text>
               <Text>
                 {(() => {
                   const startDateTime = dayjs(values.startTime, 'YYYY-MM-DD HH:mm');
                   const endDateTime = dayjs(values.endTime, 'YYYY-MM-DD HH:mm');
                   if (startDateTime.isValid() && endDateTime.isValid()) {
-                    return Math.round(endDateTime.diff(startDateTime, 'hour', true)) + ' 小时';
+                    return Math.round(endDateTime.diff(startDateTime, 'hour', true)) + ' hours';
                   }
-                  return '请输入正确的时间格式';
+                  return 'Please enter a valid time format';
                 })()}
               </Text>
             </Col>
           </Row>
         )}
 
-        <Divider>投票设置</Divider>
+        <Divider>Vote settings</Divider>
         <Row gutter={16}>
           <Col span={12}>
-            <Text strong>投票类型：</Text>
-            <Text>{values.voteType === 'single' ? '单选投票' : '多选投票'}</Text>
+            <Text strong>Vote type:</Text>
+            <Text>{values.voteType === 'single' ? 'Single choice vote' : 'Multi-choice vote'}</Text>
           </Col>
           <Col span={12}>
-            <Text strong>权限设置：</Text>
-            <Text>{values.permissionType === 'public' ? '公开投票' : '私有投票'}</Text>
+            <Text strong>Permission settings:</Text>
+            <Text>{values.permissionType === 'public' ? 'Public vote' : 'Private vote'}</Text>
           </Col>
         </Row>
       </Card>
@@ -250,8 +250,8 @@ const CreateVote = () => {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0' }}>
         <Alert
-          message="请先连接钱包"
-          description="您需要连接Web3钱包才能创建投票"
+          message="Please connect your wallet"
+          description="You need to connect your Web3 wallet to create a vote"
           type="warning"
           showIcon
         />
@@ -262,8 +262,8 @@ const CreateVote = () => {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>发起投票</Title>
-        <Text type="secondary">创建一个新的去中心化投票</Text>
+        <Title level={2}>Create a vote</Title>
+        <Text type="secondary">Create a new decentralized vote</Text>
       </div>
 
       <Row gutter={24}>
@@ -281,45 +281,45 @@ const CreateVote = () => {
                 maxVotesPerUser: 1
               }}
             >
-              {/* 基本信息 */}
-              <Title level={4}>基本信息</Title>
+              {/* Basic information */}
+              <Title level={4}>Basic information</Title>
               
               <Form.Item
                 name="title"
-                label="投票标题"
+                label="Vote title"
                 rules={[
-                  { required: true, message: '请输入投票标题' },
-                  { max: 100, message: '标题不能超过100个字符' }
+                  { required: true, message: 'Please enter the vote title' },
+                  { max: 100, message: 'The title cannot exceed 100 characters' }
                 ]}
               >
-                <Input placeholder="请输入投票标题" />
+                <Input placeholder="Please enter the vote title" />
               </Form.Item>
 
               <Form.Item
                 name="description"
-                label="投票描述"
+                label="Vote description"
                 rules={[
-                  { required: true, message: '请输入投票描述' },
-                  { max: 500, message: '描述不能超过500个字符' }
+                  { required: true, message: 'Please enter the vote description' },
+                  { max: 500, message: 'The description cannot exceed 500 characters' }
                 ]}
               >
                 <TextArea 
                   rows={4} 
-                  placeholder="详细描述投票内容、背景和目的"
+                  placeholder="Please enter the vote content, background and purpose"
                 />
               </Form.Item>
 
               <Divider />
 
-              {/* 投票选项 */}
-              <Title level={4}>投票选项</Title>
+              {/* Vote options */}
+              <Title level={4}>Vote options</Title>
               
-              <Form.Item label="选项列表">
+              <Form.Item label="Option list">
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {options.map((option, index) => (
                     <Space key={index} style={{ width: '100%' }}>
                       <Input
-                        placeholder={`选项 ${index + 1}`}
+                        placeholder={`Option ${index + 1}`}
                         value={option}
                         onChange={(e) => updateOption(index, e.target.value)}
                         style={{ flex: 1 }}
@@ -341,28 +341,28 @@ const CreateVote = () => {
                     style={{ width: '100%' }}
                     disabled={options.length >= 10}
                   >
-                    添加选项 ({options.length}/10)
+                    Add option ({options.length}/10)
                   </Button>
                 </Space>
               </Form.Item>
 
               <Divider />
 
-              {/* 时间设置 */}
-              <Title level={4}>时间设置</Title>
+              {/* Time settings */}
+              <Title level={4}>Time settings</Title>
               
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Form.Item
                   name="immediateStart"
-                  label="立即开始"
+                  label="Immediate start"
                   valuePropName="checked"
                   initialValue={false}
-                  tooltip="开启后投票将立即开始，只需设置结束时间"
+                  tooltip="After enabling, the vote will start immediately, only the end time needs to be set"
                 >
                   <Switch 
                     onChange={handleImmediateStart}
-                    checkedChildren="开启"
-                    unCheckedChildren="关闭"
+                    checkedChildren="Enable"
+                    unCheckedChildren="Disable"
                   />
                 </Form.Item>
                 
@@ -370,28 +370,28 @@ const CreateVote = () => {
                   <Col span={12}>
                     <Form.Item
                       name="startTime"
-                      label="开始时间"
+                      label="Start time"
                       rules={[
-                        { required: true, message: '请输入开始时间' },
+                        { required: true, message: 'Please enter the start time' },
                         {
                           pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
-                          message: '时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式'
+                          message: 'The time format is incorrect, please use the YYYY-MM-DD HH:mm format'
                         },
                         {
                           validator: (_, value) => {
                             if (!value) return Promise.resolve();
                             
-                            // 验证日期格式是否正确
+                            // Validate date format
                             const dateTime = dayjs(value, 'YYYY-MM-DD HH:mm');
                             if (!dateTime.isValid()) {
-                              return Promise.reject(new Error('请输入有效的日期时间'));
+                              return Promise.reject(new Error('Please enter a valid date and time'));
                             }
                             
                             const now = dayjs();
                             
-                            // 如果不是立即开始，验证开始时间
+                            // If not immediate start, validate start time
                             if (!immediateStart && dateTime.isBefore(now.add(1, 'minute'))) {
-                              return Promise.reject(new Error('开始时间必须至少比当前时间晚1分钟'));
+                              return Promise.reject(new Error('The start time must be at least 1 minute later than the current time'));
                             }
                             
                             return Promise.resolve();
@@ -400,7 +400,7 @@ const CreateVote = () => {
                       ]}
                     >
                       <Input
-                        placeholder="例如: 2025-07-19 09:44"
+                        placeholder="For example: 2025-07-19 09:44"
                         style={{ width: '100%' }}
                         disabled={immediateStart}
                         maxLength={16}
@@ -410,21 +410,21 @@ const CreateVote = () => {
                   <Col span={12}>
                     <Form.Item
                       name="endTime"
-                      label="结束时间"
+                      label="End time"
                       rules={[
-                        { required: true, message: '请输入结束时间' },
+                        { required: true, message: 'Please enter the end time' },
                         {
                           pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
-                          message: '时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式'
+                          message: 'The time format is incorrect, please use the YYYY-MM-DD HH:mm format'
                         },
                         {
                           validator: (_, value) => {
                             if (!value) return Promise.resolve();
                             
-                            // 验证日期格式是否正确
+                            // Validate date format
                             const endDateTime = dayjs(value, 'YYYY-MM-DD HH:mm');
                             if (!endDateTime.isValid()) {
-                              return Promise.reject(new Error('请输入有效的日期时间'));
+                              return Promise.reject(new Error('Please enter a valid date and time'));
                             }
                             
                             const startTimeValue = form.getFieldValue('startTime');
@@ -432,11 +432,11 @@ const CreateVote = () => {
                               const startDateTime = dayjs(startTimeValue, 'YYYY-MM-DD HH:mm');
                               
                               if (startDateTime.isValid() && endDateTime.isBefore(startDateTime)) {
-                                return Promise.reject(new Error('结束时间不能早于开始时间'));
+                                return Promise.reject(new Error('The end time cannot be earlier than the start time'));
                               }
                               
                               if (startDateTime.isValid() && endDateTime.diff(startDateTime, 'minute') < 30) {
-                                return Promise.reject(new Error('投票持续时间至少需要30分钟'));
+                                return Promise.reject(new Error('The vote duration must be at least 30 minutes'));
                               }
                             }
                             
@@ -446,7 +446,7 @@ const CreateVote = () => {
                       ]}
                     >
                       <Input
-                        placeholder="例如: 2025-07-20 18:00"
+                        placeholder="For example: 2025-07-20 18:00"
                         style={{ width: '100%' }}
                         maxLength={16}
                       />
@@ -457,38 +457,38 @@ const CreateVote = () => {
 
               <Divider />
 
-              {/* 投票设置 */}
-              <Title level={4}>投票设置</Title>
+              {/* Vote settings */}
+              <Title level={4}>Vote settings</Title>
 
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item
                     name="voteType"
-                    label="投票类型"
+                    label="Vote type"
                     rules={[{ required: true }]}
                   >
                     <Select 
                       virtual={false}
                       dropdownStyle={{ zIndex: 1050 }}
                     >
-                      <Option value="single">单选投票</Option>
-                      <Option value="multi">多选投票</Option>
+                      <Option value="single">Single choice vote</Option>
+                      <Option value="multi">Multi-choice vote</Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
                     name="permissionType"
-                    label="权限设置"
+                    label="Permission settings"
                     rules={[{ required: true }]}
                   >
                     <Select 
                       virtual={false}
                       dropdownStyle={{ zIndex: 1050 }}
                     >
-                      <Option value="public">公开投票</Option>
-                      <Option value="private">私有投票</Option>
-                      <Option value="token">代币持有者</Option>
+                      <Option value="public">Public vote</Option>
+                      <Option value="private">Private vote</Option>
+                      <Option value="token">Token holder</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -498,7 +498,7 @@ const CreateVote = () => {
                 <Col span={12}>
                   <Form.Item
                     name="maxVotesPerUser"
-                    label="每人最大投票数"
+                    label="Maximum number of votes per user"
                     dependencies={['voteType']}
                   >
                     <InputNumber min={1} max={10} style={{ width: '100%' }} />
@@ -507,7 +507,7 @@ const CreateVote = () => {
                 <Col span={12}>
                   <Form.Item
                     name="anonymous"
-                    label="匿名投票"
+                    label="Anonymous vote"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -517,15 +517,15 @@ const CreateVote = () => {
 
               <Form.Item
                 name="minParticipants"
-                label="最少参与人数"
-                tooltip="投票生效所需的最少参与人数"
+                label="Minimum number of participants"
+                tooltip="The minimum number of participants required for the vote to take effect"
               >
-                <InputNumber min={1} style={{ width: '100%' }} placeholder="可选，留空表示无限制" />
+                <InputNumber min={1} style={{ width: '100%' }} placeholder="Optional, leave blank for no limit" />
               </Form.Item>
 
               <Divider />
 
-              {/* 操作按钮 */}
+              {/* Operation buttons */}
               <Form.Item>
                 <Space>
                   <Button
@@ -535,17 +535,17 @@ const CreateVote = () => {
                     icon={<SaveOutlined />}
                     size="large"
                   >
-                    创建投票
+                    Create vote
                   </Button>
                   <Button
                     icon={<EyeOutlined />}
                     onClick={handlePreview}
                     size="large"
                   >
-                    {previewVisible ? '隐藏预览' : '预览投票'}
+                    {previewVisible ? 'Hide preview' : 'Preview vote'}
                   </Button>
                   <Button onClick={() => navigate('/dashboard')}>
-                    取消
+                    Cancel
                   </Button>
                 </Space>
               </Form.Item>

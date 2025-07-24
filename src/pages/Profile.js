@@ -79,8 +79,8 @@ const Profile = () => {
   const loadUserProfile = async () => {
     setLoading(true);
     try {
-      // 从智能合约和localStorage获取用户资料
-      // 由于合约中没有用户资料功能，我们使用localStorage作为临时存储
+      // Get user profile from smart contract and localStorage
+      // Since the contract doesn't have user profile functionality, we use localStorage as temporary storage
       const savedProfile = localStorage.getItem(`userProfile_${account}`);
       if (savedProfile) {
         const parsedProfile = JSON.parse(savedProfile);
@@ -90,7 +90,7 @@ const Profile = () => {
           lastActive: new Date().toLocaleDateString()
         });
       } else {
-        // 设置默认资料
+        // Set default profile
         setUserProfile({
           address: account,
           nickname: '',
@@ -106,7 +106,7 @@ const Profile = () => {
         });
       }
 
-      // 获取用户统计数据
+      // Get user statistics data
       const userCreatedResult = await getUserCreatedVotes(account);
       const userParticipatedResult = await getUserParticipatedVotes(account);
       
@@ -133,7 +133,7 @@ const Profile = () => {
         reputation
       });
 
-      // 获取我创建的投票
+      // Get the votes I created
       if (userCreatedResult.success) {
         const myVotesList = [];
         for (const voteId of userCreatedResult.data) {
@@ -153,7 +153,7 @@ const Profile = () => {
         setMyVotes(myVotesList);
       }
 
-      // 获取我参与的投票
+      // Get the votes I participated in
       if (userParticipatedResult.success) {
         const participatedVotesList = [];
         for (const voteId of userParticipatedResult.data) {
@@ -161,7 +161,7 @@ const Profile = () => {
           if (voteInfoResult.success) {
             const voteInfo = voteInfoResult.data;
             
-            // 获取用户的投票选择
+            // Get the user's vote choices
             const userChoicesResult = await getUserVoteChoices(voteId, account);
             let myChoice = '未知';
             if (userChoicesResult.success && userChoicesResult.data.length > 0) {
@@ -169,8 +169,8 @@ const Profile = () => {
               myChoice = voteInfo.options[choiceIndex] || '未知';
             }
             
-            // 模拟判断投票结果
-            const isWinner = Math.random() > 0.5; // 简单的随机判断
+            // Simulate vote result
+            const isWinner = Math.random() > 0.5; // Simple random judgment
             
             participatedVotesList.push({
               id: voteInfo.id,
@@ -185,12 +185,12 @@ const Profile = () => {
         setParticipatedVotes(participatedVotesList);
       }
 
-      // 获取用户成就
+      // Get user achievements
       const userAchievements = [
         {
           id: 'first_vote',
-          name: '初次投票',
-          description: '参与第一次投票',
+          name: 'First vote',
+          description: 'Participate in the first vote',
           icon: '🗳️',
           unlocked: votesParticipated > 0,
           progress: votesParticipated > 0 ? 100 : 0,
@@ -198,8 +198,8 @@ const Profile = () => {
         },
         {
           id: 'first_create',
-          name: '创建者',
-          description: '创建第一个投票',
+          name: 'Creator',
+          description: 'Create the first vote',
           icon: '🎯',
           unlocked: votesCreated > 0,
           progress: votesCreated > 0 ? 100 : 0,
@@ -207,8 +207,8 @@ const Profile = () => {
         },
         {
           id: 'active_voter',
-          name: '活跃投票者',
-          description: '参与10次投票',
+          name: 'Active voter',
+          description: 'Participate in 10 votes',
           icon: '🔥',
           unlocked: votesParticipated >= 10,
           progress: Math.min(votesParticipated * 10, 100),
@@ -216,8 +216,8 @@ const Profile = () => {
         },
         {
           id: 'vote_creator',
-          name: '投票专家',
-          description: '创建5个投票',
+          name: 'Vote expert',
+          description: 'Create 5 votes',
           icon: '👑',
           unlocked: votesCreated >= 5,
           progress: Math.min(votesCreated * 20, 100),
@@ -225,8 +225,8 @@ const Profile = () => {
         },
         {
           id: 'community_leader',
-          name: '社区领袖',
-          description: '声誉达到100',
+          name: 'Community leader',
+          description: 'Reputation reaches 100',
           icon: '🌟',
           unlocked: reputation >= 100,
           progress: Math.min(reputation, 100),
@@ -238,17 +238,17 @@ const Profile = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('加载用户资料失败:', error);
-      message.error('加载用户资料失败');
+      console.error('Failed to load user profile:', error);
+      message.error('Failed to load user profile');
       setLoading(false);
     }
   };
 
   const getStatusTag = (status) => {
     const statusMap = {
-      'active': { color: 'green', text: '进行中' },
-      'completed': { color: 'blue', text: '已结束' },
-      'pending': { color: 'orange', text: '未开始' }
+      'active': { color: 'green', text: 'Ongoing' },
+      'completed': { color: 'blue', text: 'Ended' },
+      'pending': { color: 'orange', text: 'Pending' }
     };
     const config = statusMap[status] || statusMap['pending'];
     return <Tag color={config.color}>{config.text}</Tag>;
@@ -257,32 +257,32 @@ const Profile = () => {
   const handleEditProfile = async () => {
     try {
       const values = await form.validateFields();
-      console.log('编辑资料:', values);
+      console.log('Edit profile:', values);
       
-      // 调用智能合约更新用户资料
-      // 由于合约中没有用户资料功能，我们使用localStorage作为临时存储
+      // Call the smart contract to update user profile
+      // Since the contract doesn't have user profile functionality, we use localStorage as temporary storage
       const updatedProfile = {
         ...userProfile,
         ...values
       };
       
-      // 保存到localStorage
+      // Save to localStorage
       localStorage.setItem(`userProfile_${account}`, JSON.stringify(updatedProfile));
       
       setUserProfile(updatedProfile);
       
-      message.success('资料更新成功');
+      message.success('Profile updated successfully');
       setEditModalVisible(false);
     } catch (error) {
-      console.error('更新失败:', error);
-      message.error('更新失败，请重试');
+      console.error('Update failed:', error);
+      message.error('Update failed, please try again');
     }
   };
 
   const copyAddress = () => {
     if (account) {
       navigator.clipboard.writeText(account);
-      message.success('地址已复制到剪贴板');
+      message.success('Address copied to clipboard');
     }
   };
 
@@ -290,7 +290,7 @@ const Profile = () => {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0' }}>
         <Empty
-          description="请先连接钱包查看个人资料"
+          description="Please connect your wallet to view your profile"
         />
       </div>
     );
@@ -299,7 +299,7 @@ const Profile = () => {
   return (
     <div>
       <Row gutter={24}>
-        {/* 左侧：基本信息 */}
+        {/* Left: basic information */}
         <Col xs={24} lg={8}>
           <Card>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -328,32 +328,32 @@ const Profile = () => {
                 }}
                 style={{ marginTop: 16 }}
               >
-                编辑资料
+                Edit profile
               </Button>
             </div>
 
-            {/* 用户简介 */}
+            {/* User introduction */}
             {userProfile.bio && (
               <div style={{ marginBottom: 24 }}>
-                <Title level={5}>个人简介</Title>
+                <Title level={5}>User introduction</Title>
                 <Paragraph>{userProfile.bio}</Paragraph>
               </div>
             )}
 
-            {/* 统计信息 */}
+            {/* Statistics information */}
             <div style={{ marginBottom: 24 }}>
-              <Title level={5}>统计数据</Title>
+              <Title level={5}>Statistics data</Title>
               <Row gutter={16}>
                 <Col span={12}>
                   <Statistic
-                    title="创建投票"
+                    title="Create vote"
                     value={userStats.votesCreated}
                     prefix={<TrophyOutlined />}
                   />
                 </Col>
                 <Col span={12}>
                   <Statistic
-                    title="参与投票"
+                    title="Participate in vote"
                     value={userStats.votesParticipated}
                     prefix={<BarChartOutlined />}
                   />
@@ -361,10 +361,10 @@ const Profile = () => {
               </Row>
             </div>
 
-            {/* 联系方式 */}
+            {/* Contact information */}
             {(userProfile.social.twitter || userProfile.social.github) && (
               <div>
-                <Title level={5}>社交媒体</Title>
+                <Title level={5}>Social media</Title>
                 <Space direction="vertical">
                   {userProfile.social.twitter && (
                     <Text>Twitter: {userProfile.social.twitter}</Text>
@@ -378,10 +378,10 @@ const Profile = () => {
           </Card>
         </Col>
 
-        {/* 右侧：详细信息 */}
+        {/* Right: detailed information */}
         <Col xs={24} lg={16}>
           <Tabs defaultActiveKey="votes">
-            <TabPane tab="我的投票" key="votes">
+            <TabPane tab="My votes" key="votes">
               <Card>
                 <Spin spinning={loading}>
                   {myVotes.length > 0 ? (
@@ -395,17 +395,17 @@ const Profile = () => {
                               icon={<EyeOutlined />}
                               onClick={() => navigate(`/vote/${item.id}`)}
                             >
-                              查看
+                              View
                             </Button>,
                             <Button
                               type="link"
                               icon={<ShareAltOutlined />}
                               onClick={() => {
                                 navigator.clipboard.writeText(`${window.location.origin}/vote/${item.id}`);
-                                message.success('链接已复制');
+                                message.success('Link copied');
                               }}
                             >
-                              分享
+                              Share
                             </Button>
                           ]}
                         >
@@ -422,10 +422,10 @@ const Profile = () => {
                                 <br />
                                 <Space style={{ marginTop: 8 }}>
                                   <Text type="secondary">
-                                    <UserOutlined /> {item.participants} 人参与
+                                    <UserOutlined /> {item.participants} people participated
                                   </Text>
                                   <Text type="secondary">
-                                    <CalendarOutlined /> 创建于: {item.createdTime}
+                                    <CalendarOutlined /> Created at: {item.createdTime}
                                   </Text>
                                 </Space>
                               </div>
@@ -437,14 +437,14 @@ const Profile = () => {
                   ) : (
                     <Empty
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="您还没有创建过投票"
+                      description="You haven't created any votes yet"
                     />
                   )}
                 </Spin>
               </Card>
             </TabPane>
 
-            <TabPane tab="参与记录" key="participated">
+            <TabPane tab="Participated records" key="participated">
               <Card>
                 <Spin spinning={loading}>
                   {participatedVotes.length > 0 ? (
@@ -458,7 +458,7 @@ const Profile = () => {
                               icon={<EyeOutlined />}
                               onClick={() => navigate(`/vote/${item.id}`)}
                             >
-                              查看详情
+                              View details
                             </Button>
                           ]}
                         >
@@ -467,21 +467,21 @@ const Profile = () => {
                               <Space>
                                 {item.title}
                                 {item.isWinner ? (
-                                  <Badge status="success" text="投票成功" />
+                                  <Badge status="success" text="Vote successful" />
                                 ) : (
-                                  <Badge status="default" text="未中选" />
+                                  <Badge status="default" text="Not selected" />
                                 )}
                               </Space>
                             }
                             description={
                               <div>
                                 <Space>
-                                  <Text type="secondary">我的选择: {item.myChoice}</Text>
-                                  <Text type="secondary">最终结果: {item.result}</Text>
+                                  <Text type="secondary">My choice: {item.myChoice}</Text>
+                                  <Text type="secondary">Final result: {item.result}</Text>
                                 </Space>
                                 <br />
                                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                                  参与时间: {item.participatedTime}
+                                  Participated time: {item.participatedTime}
                                 </Text>
                               </div>
                             }
@@ -492,14 +492,14 @@ const Profile = () => {
                   ) : (
                     <Empty
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="您还没有参与过投票"
+                      description="You haven't participated in any votes yet"
                     />
                   )}
                 </Spin>
               </Card>
             </TabPane>
 
-            <TabPane tab="成就" key="achievements">
+            <TabPane tab="Achievements" key="achievements">
               <Card>
                 <Spin spinning={loading}>
                   {achievements.length > 0 ? (
@@ -524,7 +524,7 @@ const Profile = () => {
                             </Text>
                             {achievement.unlocked ? (
                               <div style={{ marginTop: 8 }}>
-                                <Tag color="green">已解锁</Tag>
+                                <Tag color="green">Unlocked</Tag>
                                 <br />
                                 <Text type="secondary" style={{ fontSize: '10px' }}>
                                   {achievement.unlockedDate}
@@ -538,7 +538,7 @@ const Profile = () => {
                                   showInfo={false}
                                 />
                                 <Text type="secondary" style={{ fontSize: '10px' }}>
-                                  进度: {achievement.progress || 0}%
+                                  Progress: {achievement.progress || 0}%
                                 </Text>
                               </div>
                             )}
@@ -549,7 +549,7 @@ const Profile = () => {
                   ) : (
                     <Empty
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="暂无成就记录"
+                      description="No achievements yet"
                     />
                   )}
                 </Spin>
@@ -559,42 +559,42 @@ const Profile = () => {
         </Col>
       </Row>
 
-      {/* 编辑资料模态框 */}
+      {/* Edit profile modal */}
       <Modal
-        title="编辑个人资料"
+        title="Edit profile"
         open={editModalVisible}
         onOk={handleEditProfile}
         onCancel={() => {
           setEditModalVisible(false);
           form.resetFields();
         }}
-        okText="保存"
-        cancelText="取消"
+        okText="Save"
+        cancelText="Cancel"
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="nickname"
-            label="昵称"
-            rules={[{ max: 50, message: '昵称不能超过50个字符' }]}
+            label="Nickname"
+            rules={[{ max: 50, message: 'Nickname cannot exceed 50 characters' }]}
           >
-            <Input placeholder="请输入昵称" />
+            <Input placeholder="Enter nickname" />
           </Form.Item>
 
           <Form.Item
             name="bio"
-            label="个人简介"
-            rules={[{ max: 200, message: '简介不能超过200个字符' }]}
+            label="Personal introduction"
+            rules={[{ max: 200, message: 'Introduction cannot exceed 200 characters' }]}
           >
             <Input.TextArea 
               rows={3} 
-              placeholder="介绍一下自己..."
+              placeholder="Introduce yourself..."
             />
           </Form.Item>
 
           <Form.Item
             name="email"
-            label="邮箱"
-            rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}
+            label="Email"
+            rules={[{ type: 'email', message: 'Please enter a valid email address' }]}
           >
             <Input placeholder="your@example.com" />
           </Form.Item>

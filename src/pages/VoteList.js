@@ -57,7 +57,7 @@ const VoteList = () => {
     filterVotes();
   }, [votes, searchTerm, statusFilter, typeFilter]);
 
-  // 监听页面焦点变化，当页面重新获得焦点时刷新数据
+  // Listen for page focus changes, refresh data when page regains focus
   useEffect(() => {
     const handleFocus = () => {
       if (isConnected) {
@@ -72,46 +72,46 @@ const VoteList = () => {
   const loadVotes = async () => {
     setLoading(true);
     try {
-      console.log('开始加载投票列表...');
+      console.log('Loading vote list...');
       
-      //从智能合约获取投票列表
+      // Get vote list from smart contract
       const contract = await getContract();
-      console.log('合约实例获取成功:', contract.target);
+      console.log('Smart contract instance obtained:', contract.target);
       
       const voteCount = await contract.voteCount();
-      console.log('投票总数:', Number(voteCount));
+      console.log('Total votes:', Number(voteCount));
       
       const votesList = [];
       
       for (let i = 0; i < voteCount; i++) {
         try {
-          console.log(`正在获取投票 ${i} 的信息...`);
+          console.log(`Getting vote ${i} information...`);
           const voteInfo = await contract.getVoteInfo(i);
           const voteResults = await contract.getVoteResults(i);
           
-          // 将枚举值转换为字符串
+          // Convert enum values to strings
           const typeMap = ['single', 'multi'];
           
-          // 获取时间戳（毫秒）
+          // Get timestamps (milliseconds)
           const startTime = Number(voteInfo.startTime) * 1000;
           const endTime = Number(voteInfo.endTime) * 1000;
           const currentTime = Date.now();
           
-          // 根据时间判断实际状态，不管合约状态如何
+          // Determine actual status based on time, regardless of contract status
           let actualStatus;
           const contractStatus = ['active', 'ended', 'cancelled'][voteInfo.status];
           
-          if (voteInfo.status === 2) { // 合约状态为cancelled
+          if (voteInfo.status === 2) { // Contract status is cancelled
             actualStatus = 'cancelled';
-          } else if (voteInfo.status === 1) { // 合约状态为ended
+          } else if (voteInfo.status === 1) { // Contract status is ended
             actualStatus = 'ended';
-          } else { // 合约状态为active (0) 或其他
+          } else { // Contract status is active (0) or other
             if (currentTime < startTime) {
-              actualStatus = 'pending'; // 未开始
+              actualStatus = 'pending'; // Not started
             } else if (currentTime > endTime) {
-              actualStatus = 'ended'; // 已结束
+              actualStatus = 'ended'; // Ended
             } else {
-              actualStatus = 'active'; // 进行中
+              actualStatus = 'active'; // Active
             }
           }
           
@@ -120,7 +120,7 @@ const VoteList = () => {
             title: voteInfo.title,
             description: voteInfo.description,
             creator: voteInfo.creator,
-            status: actualStatus, // 使用基于时间判断的实际状态
+            status: actualStatus, // Use actual status based on time
             type: typeMap[voteInfo.voteType],
             startTime: new Date(startTime).toLocaleDateString(),
             endTime: new Date(endTime).toLocaleDateString(),
@@ -129,24 +129,24 @@ const VoteList = () => {
             participants: Number(voteInfo.totalVoters),
             totalVotes: voteResults.reduce((sum, count) => sum + Number(count), 0),
             options: voteInfo.options,
-            anonymous: false, // 合约中没有这个字段，设为默认值
-            tags: [] // 合约中没有这个字段，设为默认值
+            anonymous: false, // No field in contract, set to default value
+            tags: [] // No field in contract, set to default value
           };
           
           console.log(`投票 ${i} 信息:`, voteData);
           votesList.push(voteData);
         } catch (voteError) {
-          console.error(`获取投票 ${i} 信息失败:`, voteError);
-          // 跳过有问题的投票，继续处理其他投票
+          console.error(`Failed to get vote ${i} information:`, voteError);
+          // Skip problematic votes and continue processing other votes
         }
       }
 
       
-      console.log('成功加载投票列表:', votesList);
+      console.log('Successfully loaded vote list:', votesList);
       setVotes(votesList);
       setLoading(false);
     } catch (error) {
-      console.error('加载投票列表失败:', error);
+      console.error('Failed to load vote list:', error);
       setLoading(false);
     }
   };
@@ -154,17 +154,17 @@ const VoteList = () => {
   const filterVotes = () => {
     let filtered = votes;
 
-    // 按状态筛选
+    // Filter by status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(vote => vote.status === statusFilter);
     }
 
-    // 按类型筛选
+    // Filter by type
     if (typeFilter !== 'all') {
       filtered = filtered.filter(vote => vote.type === typeFilter);
     }
 
-    // 按搜索词筛选
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(vote =>
         vote.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,21 +174,21 @@ const VoteList = () => {
     }
 
     setFilteredVotes(filtered);
-    setCurrentPage(1); // 重置到第一页
+    setCurrentPage(1); // Reset to first page
   };
 
   const getStatusConfig = (status) => {
     const configs = {
-      'active': { color: 'green', text: '进行中', icon: <ClockCircleOutlined /> },
-      'ended': { color: 'blue', text: '已结束', icon: <TrophyOutlined /> },
-      'cancelled': { color: 'red', text: '已取消', icon: <ExclamationCircleOutlined /> },
-      'pending': { color: 'orange', text: '未开始', icon: <CalendarOutlined /> }
+      'active': { color: 'green', text: 'Active', icon: <ClockCircleOutlined /> },
+      'ended': { color: 'blue', text: 'Ended', icon: <TrophyOutlined /> },
+      'cancelled': { color: 'red', text: 'Cancelled', icon: <ExclamationCircleOutlined /> },
+      'pending': { color: 'orange', text: 'Pending', icon: <CalendarOutlined /> }
     };
     return configs[status] || configs['pending'];
   };
 
   const getTypeText = (type) => {
-    return type === 'single' ? '单选' : '多选';
+    return type === 'single' ? 'Single vote' : 'Multiple vote';
   };
 
   const calculateProgress = (vote) => {
@@ -208,7 +208,7 @@ const VoteList = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // 分页数据
+  // Paginated data
   const paginatedVotes = filteredVotes.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -229,7 +229,7 @@ const VoteList = () => {
               icon={<EyeOutlined />}
               onClick={() => navigate(`/vote/${vote.id}`)}
             >
-              查看详情
+              View details
             </Button>
           ]}
         >
@@ -249,7 +249,7 @@ const VoteList = () => {
                   <Text strong style={{ fontSize: '16px' }}>{vote.title}</Text>
                   <Tag color={statusConfig.color}>{statusConfig.text}</Tag>
                   <Tag>{getTypeText(vote.type)}</Tag>
-                  {vote.anonymous && <Tag color="purple">匿名</Tag>}
+                  {vote.anonymous && <Tag color="purple">Anonymous</Tag>}
                 </Space>
                 <Space wrap>
                   {vote.tags && vote.tags.map(tag => (
@@ -268,29 +268,29 @@ const VoteList = () => {
                   <Col span={12}>
                     <Space>
                       <UserOutlined />
-                      <Text type="secondary">{vote.participants} 人参与</Text>
+                      <Text type="secondary">{vote.participants} people participated</Text>
                     </Space>
                   </Col>
                   <Col span={12}>
                     <Space>
-                      <Text type="secondary">创建者: {formatAddress(vote.creator)}</Text>
+                      <Text type="secondary">Creator: {formatAddress(vote.creator)}</Text>
                     </Space>
                   </Col>
                 </Row>
 
                 <Row gutter={16}>
                   <Col span={12}>
-                    <Text type="secondary">开始: {vote.startTime}</Text>
+                    <Text type="secondary">Start: {vote.startTime}</Text>
                   </Col>
                   <Col span={12}>
-                    <Text type="secondary">结束: {vote.endTime}</Text>
+                    <Text type="secondary">End: {vote.endTime}</Text>
                   </Col>
                 </Row>
 
                 {vote.status === 'active' && (
                   <div>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      投票进度
+                      Vote progress
                     </Text>
                     <Progress
                       percent={Math.round(progress)}
@@ -302,11 +302,11 @@ const VoteList = () => {
                 {vote.status === 'pending' && (
                   <div>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      投票状态
+                      Vote status
                     </Text>
                     <div style={{ padding: '4px 0' }}>
                       <Text type="secondary">
-                        投票将于 {new Date(vote.startTimestamp).toLocaleString()} 开始
+                        Vote will start at {new Date(vote.startTimestamp).toLocaleString()}
                       </Text>
                     </div>
                   </div>
@@ -314,11 +314,11 @@ const VoteList = () => {
                 {(vote.status === 'ended' || vote.status === 'cancelled') && (
                   <div>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      投票状态
+                      Vote status
                     </Text>
                     <div style={{ padding: '4px 0' }}>
                       <Text type="secondary">
-                        {vote.status === 'ended' ? '投票已结束' : '投票已取消'}
+                        {vote.status === 'ended' ? 'Vote ended' : 'Vote cancelled'}
                       </Text>
                     </div>
                   </div>
@@ -334,16 +334,16 @@ const VoteList = () => {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>所有投票</Title>
-        <Text type="secondary">浏览和参与平台上的所有投票活动</Text>
+        <Title level={2}>All votes</Title>
+        <Text type="secondary">Browse and participate in all voting activities on the platform</Text>
       </div>
 
-      {/* 筛选和搜索 */}
+      {/* Filter and search */}
       <Card style={{ marginBottom: 24, position: 'relative', zIndex: 10 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={8}>
             <Input
-              placeholder="搜索投票标题、描述或标签"
+              placeholder="Search vote title, description or tag"
               prefix={<SearchOutlined />}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -353,50 +353,50 @@ const VoteList = () => {
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Select
-              placeholder="状态筛选"
+              placeholder="Status filter"
               value={statusFilter}
               onChange={setStatusFilter}
               style={{ width: '100%' }}
               {...optimizedSelectProps}
             >
-              <Option value="all">全部状态</Option>
-              <Option value="active">进行中</Option>
-              <Option value="ended">已结束</Option>
-              <Option value="pending">未开始</Option>
-              <Option value="cancelled">已取消</Option>
+              <Option value="all">All status</Option>
+              <Option value="active">Active</Option>
+              <Option value="ended">Ended</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="cancelled">Cancelled</Option>
             </Select>
           </Col>
           <Col xs={12} sm={6} md={4}>
             <Select
-              placeholder="类型筛选"
+              placeholder="Type filter"
               value={typeFilter}
               onChange={setTypeFilter}
               style={{ width: '100%' }}
               {...optimizedSelectProps}
             >
-              <Option value="all">全部类型</Option>
-              <Option value="single">单选投票</Option>
-              <Option value="multi">多选投票</Option>
+              <Option value="all">All types</Option>
+              <Option value="single">Single vote</Option>
+              <Option value="multi">Multiple vote</Option>
             </Select>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <Space>
               <Text type="secondary">
-                共找到 {filteredVotes.length} 个投票
+                Found {filteredVotes.length} votes
               </Text>
               <Button
                 icon={<FilterOutlined />}
                 onClick={loadVotes}
                 loading={loading}
               >
-                刷新
+                Refresh
               </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* 投票列表 */}
+      {/* Vote list */}
       <Spin spinning={loading}>
         {paginatedVotes.length > 0 ? (
           <>
@@ -414,7 +414,7 @@ const VoteList = () => {
               renderItem={(vote) => <VoteCard vote={vote} />}
             />
 
-            {/* 分页 */}
+            {/* Pagination */}
             <div style={{ textAlign: 'center', marginTop: 24 }}>
               <Pagination
                 current={currentPage}
@@ -424,7 +424,7 @@ const VoteList = () => {
                 showSizeChanger={false}
                 showQuickJumper
                 showTotal={(total, range) =>
-                  `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                  `Page ${range[0]}-${range[1]} of ${total}`
                 }
               />
             </div>
@@ -433,8 +433,8 @@ const VoteList = () => {
           <Empty
             description={
               searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                ? '没有找到符合条件的投票'
-                : loading ? '正在加载投票数据...' : '暂无投票数据'
+                ? 'No votes found'
+                : loading ? 'Loading vote data...' : 'No votes'
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />

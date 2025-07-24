@@ -67,17 +67,17 @@ const VoteDetail = () => {
   const loadVoteDetail = async () => {
     setLoading(true);
     try {
-      console.log('开始加载投票详情，ID:', id);
+      console.log('Start loading vote details, ID:', id);
       
-      // 从智能合约获取投票详情
+      // Get vote details from smart contract
       const result = await getVoteInfo(id);
       
       if (result.success) {
         const voteData = result.data;
-        console.log('投票详情数据:', voteData);
-        console.log('投票类型 voteType:', voteData.voteType, '类型:', typeof voteData.voteType);
+        console.log('Vote details data:', voteData);
+        console.log('Vote type voteType:', voteData.voteType, 'type:', typeof voteData.voteType);
         
-        // 根据时间判断实际状态
+        // Determine actual status based on time
         const currentTime = Date.now();
         let actualStatus = voteData.status;
         if (voteData.status === 'active') {
@@ -94,7 +94,7 @@ const VoteDetail = () => {
           description: voteData.description,
           creator: voteData.creator,
           status: actualStatus,
-          type: voteData.voteType, // 这里已经是转换后的字符串 'single' 或 'multi'
+          type: voteData.voteType, // Here it's already a string 'single' or 'multi'
           startTime: new Date(voteData.startTime).toISOString(),
           endTime: new Date(voteData.endTime).toISOString(),
           startTimestamp: voteData.startTime,
@@ -106,141 +106,141 @@ const VoteDetail = () => {
             text: opt,
             votes: voteData.results[index] || 0
           })),
-          anonymous: false, // 合约中没有这个字段
-          tags: [], // 合约中没有这个字段
-          minParticipants: 0, // 合约中没有这个字段
-          maxVotesPerUser: 1, // 默认值
+          anonymous: false, // The contract doesn't have this field
+          tags: [], // The contract doesn't have this field
+          minParticipants: 0, // The contract doesn't have this field
+          maxVotesPerUser: 1, // Default value
           permissionType: voteData.isPrivate ? 'private' : 'public'
         });
         
         setResults(voteData.results);
       } else {
-        throw new Error(result.error || '投票不存在');
+        throw new Error(result.error || 'Vote does not exist');
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('加载投票详情失败:', error);
-      message.error('投票不存在或加载失败');
+      console.error('Failed to load vote details:', error);
+      message.error('Vote does not exist or failed to load');
       setLoading(false);
     }
   };
 
   const checkUserVoteStatus = async () => {
     try {
-      console.log('检查用户投票状态，投票ID:', id, '用户地址:', account);
+      console.log('Check user vote status, vote ID:', id, 'user address:', account);
       
-      // 检查用户是否已投票
+      // Check if user has voted
       const result = await hasUserVoted(id, account);
       
       if (result.success) {
         setHasVoted(result.data);
-        console.log('用户是否已投票:', result.data);
+        console.log('User has voted:', result.data);
         
-        // 如果已投票，获取投票选择
+        // If user has voted, get vote choices
         if (result.data) {
           const choicesResult = await getUserVoteChoices(id, account);
           if (choicesResult.success) {
             setSelectedOptions(choicesResult.data);
-            console.log('用户投票选择:', choicesResult.data);
+            console.log('User vote choices:', choicesResult.data);
           }
         }
       } else {
-        console.error('检查投票状态失败:', result.error);
+        console.error('Check vote status failed:', result.error);
       }
     } catch (error) {
-      console.error('检查投票状态失败:', error);
+      console.error('Check vote status failed:', error);
     }
   };
 
   const handleVote = async () => {
     if (!isConnected) {
-      message.error('请先连接钱包');
+      message.error('Please connect your wallet');
       return;
     }
 
     if (selectedOptions.length === 0) {
-      message.error('请选择投票选项');
+      message.error('Please select vote options');
       return;
     }
 
     if (vote.type === 'single' && selectedOptions.length > 1) {
-      message.error('单选投票只能选择一个选项');
+      message.error('Single vote can only select one option');
       return;
     }
 
-    // 检查投票状态
+    // Check vote status
     if (vote.status !== 'active') {
-      message.error('投票已结束或尚未开始');
+      message.error('Vote has ended or not started yet');
       return;
     }
 
-    // 检查是否已投过票
+    // Check if user has voted
     if (hasVoted) {
-      message.error('您已经参与过此投票');
+      message.error('You have already participated in this vote');
       return;
     }
 
-    console.log('准备投票 - 投票ID:', id, '选择的选项:', selectedOptions, '投票类型:', vote.type);
-    console.log('当前vote对象:', vote);
+    console.log('Prepare to vote - vote ID:', id, 'selected options:', selectedOptions, 'vote type:', vote.type);
+    console.log('Current vote object:', vote);
     console.log('vote.options:', vote?.options);
-    console.log('vote.options类型:', typeof vote?.options, '是否为数组:', Array.isArray(vote?.options));
+    console.log('vote.options type:', typeof vote?.options, 'is array:', Array.isArray(vote?.options));
 
-    console.log('直接开始投票逻辑...');
+    console.log('Directly start voting logic...');
     setVoting(true);
     
     try {
-      console.log('开始投票，投票ID:', id, '选择的选项:', selectedOptions);
+      console.log('Start voting, vote ID:', id, 'selected options:', selectedOptions);
       
-      // 验证输入参数
+      // Validate input parameters
       if (!id || selectedOptions.length === 0) {
-        throw new Error('投票参数无效');
+        throw new Error('Invalid vote parameters');
       }
 
-      // 确保选项ID是数字类型
+      // Ensure option ID is a number type
       const normalizedOptions = selectedOptions.map(option => Number(option));
-      console.log('标准化后的选项:', normalizedOptions);
+      console.log('Normalized options:', normalizedOptions);
       
-      // 调用智能合约进行投票
+      // Call smart contract to vote
       const result = await castVote(parseInt(id), normalizedOptions);
       
-      console.log('投票结果:', result);
+      console.log('Vote result:', result);
       
       if (result.success) {
         message.success('投票成功！');
         setHasVoted(true);
-        setSelectedOptions([]); // 清空选择
-        await loadVoteDetail(); // 重新加载数据
-        console.log('投票成功，交易哈希:', result.txHash);
+        setSelectedOptions([]); // Clear selection
+        await loadVoteDetail(); // Reload data
+        console.log('Vote successful, transaction hash:', result.txHash);
       } else {
         throw new Error(result.error || '投票失败');
       }
       
     } catch (error) {
-      console.error('投票失败详细信息:', error);
-      let errorMessage = '投票失败';
+      console.error('Vote failed detailed information:', error);
+      let errorMessage = 'Vote failed';
       
-      // 根据错误类型提供更友好的错误信息
-      if (error.message.includes('User denied') || error.message.includes('用户拒绝')) {
-        errorMessage = '用户取消了交易';
+      // Provide more friendly error messages based on error type
+      if (error.message.includes('User denied') || error.message.includes('User denied')) {
+        errorMessage = 'User canceled transaction';
       } else if (error.message.includes('insufficient funds')) {
-        errorMessage = '账户余额不足支付Gas费用';
+        errorMessage = 'Account balance is insufficient to pay gas fees';
       } else if (error.message.includes('Vote not found')) {
-        errorMessage = '投票不存在';
+        errorMessage = 'Vote does not exist';
       } else if (error.message.includes('Vote not active')) {
-        errorMessage = '投票已结束或尚未开始';
+        errorMessage = 'Vote has ended or not started yet';
       } else if (error.message.includes('Already voted')) {
-        errorMessage = '您已经投过票了';
+        errorMessage = 'You have already voted';
       } else if (error.message.includes('Invalid choice')) {
-        errorMessage = '投票选项无效';
+        errorMessage = 'Invalid vote option';
       } else if (error.message.includes('revert')) {
-        // 提取智能合约revert信息
+        // Extract smart contract revert information
         const revertMatch = error.message.match(/revert\s+(.+)/);
         if (revertMatch) {
           errorMessage = revertMatch[1];
         }
       } else {
-        errorMessage = error.message || '请检查网络连接后重试';
+        errorMessage = error.message || 'Please check network connection and try again';
       }
       
       message.error(errorMessage);
@@ -251,10 +251,10 @@ const VoteDetail = () => {
 
   const getStatusConfig = (status) => {
     const configs = {
-      'active': { color: 'green', text: '进行中', icon: <ClockCircleOutlined /> },
-      'ended': { color: 'blue', text: '已结束', icon: <TrophyOutlined /> },
-      'cancelled': { color: 'red', text: '已取消', icon: <ExclamationCircleOutlined /> },
-      'pending': { color: 'orange', text: '未开始', icon: <CalendarOutlined /> }
+      'active': { color: 'green', text: 'Active', icon: <ClockCircleOutlined /> },
+      'ended': { color: 'blue', text: 'Ended', icon: <TrophyOutlined /> },
+      'cancelled': { color: 'red', text: 'Cancelled', icon: <ExclamationCircleOutlined /> },
+      'pending': { color: 'orange', text: 'Pending', icon: <CalendarOutlined /> }
     };
     return configs[status] || configs['pending'];
   };
@@ -282,31 +282,31 @@ const VoteDetail = () => {
     
     if (vote.status === 'pending') {
       const remaining = start - now;
-      if (remaining <= 0) return '即将开始';
+      if (remaining <= 0) return 'Starting soon';
       
       const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
       const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
       
-      if (days > 0) return `${days} 天 ${hours} 小时后开始`;
-      if (hours > 0) return `${hours} 小时 ${minutes} 分钟后开始`;
-      return `${minutes} 分钟后开始`;
+      if (days > 0) return `${days} days ${hours} hours later`;
+      if (hours > 0) return `${hours} hours ${minutes} minutes later`;
+      return `${minutes} minutes later`;
     }
     
     if (vote.status === 'ended' || vote.status === 'cancelled') {
-      return vote.status === 'ended' ? '已结束' : '已取消';
+      return vote.status === 'ended' ? 'Ended' : 'Cancelled';
     }
     
     const remaining = end - now;
-    if (remaining <= 0) return '已结束';
+    if (remaining <= 0) return 'Ended';
     
     const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
     const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
     
-    if (days > 0) return `剩余 ${days} 天 ${hours} 小时`;
-    if (hours > 0) return `剩余 ${hours} 小时 ${minutes} 分钟`;
-    return `剩余 ${minutes} 分钟`;
+    if (days > 0) return `Remaining ${days} days ${hours} hours`;
+    if (hours > 0) return `Remaining ${hours} hours ${minutes} minutes`;
+    return `Remaining ${minutes} minutes`;
   };
 
   const formatAddress = (address) => {
@@ -316,7 +316,7 @@ const VoteDetail = () => {
   const shareVote = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
-    message.success('投票链接已复制到剪贴板');
+    message.success('Vote link copied to clipboard');
   };
 
   if (loading) {
@@ -331,7 +331,7 @@ const VoteDetail = () => {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0' }}>
         <Empty
-          description="投票不存在或加载失败"
+          description="Vote does not exist or failed to load"
         />
       </div>
     );
@@ -339,17 +339,17 @@ const VoteDetail = () => {
 
   const statusConfig = getStatusConfig(vote.status);
 
-  // 添加调试信息
-  console.log('VoteDetail 渲染 - vote对象:', vote);
-  console.log('投票类型 vote.type:', vote.type, '类型:', typeof vote.type);
-  console.log('当前选择的选项:', selectedOptions);
-  console.log('用户是否已投票:', hasVoted);
-  console.log('钱包是否连接:', isConnected);
-  console.log('投票状态:', vote.status);
+  // Add debug information
+  //console.log('VoteDetail rendering - vote object:', vote);
+  //console.log('Vote type vote.type:', vote.type, 'type:', typeof vote.type);
+  //console.log('Current selected options:', selectedOptions);
+  //console.log('User has voted:', hasVoted);
+  //console.log('Wallet connected:', isConnected);
+  //console.log('Vote status:', vote.status);
 
   return (
     <div>
-      {/* 投票标题和基本信息 */}
+      {/* Vote title and basic information */}
       <Card style={{ marginBottom: 24 }}>
         <Row gutter={24}>
           <Col xs={24} lg={16}>
@@ -360,23 +360,23 @@ const VoteDetail = () => {
                   <Tag color={statusConfig.color} icon={statusConfig.icon}>
                     {statusConfig.text}
                   </Tag>
-                  {vote.anonymous && <Tag color="purple" icon={<LockOutlined />}>匿名投票</Tag>}
+                  {vote.anonymous && <Tag color="purple" icon={<LockOutlined />}>Anonymous vote</Tag>}
                 </Space>
               </div>
               
               <Paragraph>{vote.description}</Paragraph>
               
               <Descriptions size="small" column={2}>
-                <Descriptions.Item label="创建者">
+                <Descriptions.Item label="Creator">
                   {formatAddress(vote.creator)}
                 </Descriptions.Item>
-                <Descriptions.Item label="投票类型">
-                  {vote.type === 'single' ? '单选投票' : '多选投票'}
+                <Descriptions.Item label="Vote type">
+                  {vote.type === 'single' ? 'Single vote' : 'Multiple vote'}
                 </Descriptions.Item>
-                <Descriptions.Item label="开始时间">
+                <Descriptions.Item label="Start time">
                   {new Date(vote.startTime).toLocaleString()}
                 </Descriptions.Item>
-                <Descriptions.Item label="结束时间">
+                <Descriptions.Item label="End time">
                   {new Date(vote.endTime).toLocaleString()}
                 </Descriptions.Item>
               </Descriptions>
@@ -395,14 +395,14 @@ const VoteDetail = () => {
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Statistic
-                  title="参与人数"
+                  title="Participants"
                   value={vote.totalParticipants}
                   prefix={<UserOutlined />}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="总票数"
+                  title="Total votes"
                   value={vote.totalVotes}
                   prefix={<TrophyOutlined />}
                 />
@@ -421,7 +421,7 @@ const VoteDetail = () => {
                   onClick={shareVote}
                   block
                 >
-                  分享投票
+                  Share vote
                 </Button>
               </Col>
             </Row>
@@ -430,21 +430,21 @@ const VoteDetail = () => {
       </Card>
 
       <Row gutter={24}>
-        {/* 投票选项 */}
+        {/* Vote options */}
         <Col xs={24} lg={16}>
-          <Card title="投票选项">
+          <Card title="Vote options">
             {vote.status === 'active' && !hasVoted && isConnected ? (
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ marginBottom: 16 }}>
                   <Text type="secondary">
-                    投票类型：{vote.type === 'single' ? '单选投票（只能选择一个选项）' : '多选投票（可以选择多个选项）'}
+                    Vote type: {vote.type === 'single' ? 'Single vote (can only select one option)' : 'Multiple vote (can select multiple options)'}
                   </Text>
                 </div>
                 {vote.type === 'single' ? (
                   <Radio.Group
                     value={selectedOptions[0]}
                     onChange={(e) => {
-                      console.log('单选投票选择:', e.target.value);
+                      console.log('Single vote selected:', e.target.value);
                       setSelectedOptions([e.target.value]);
                     }}
                   >
@@ -460,7 +460,7 @@ const VoteDetail = () => {
                   <Checkbox.Group
                     value={selectedOptions}
                     onChange={(newSelections) => {
-                      console.log('多选投票选择:', newSelections);
+                      console.log('Multiple vote selected:', newSelections);
                       setSelectedOptions(newSelections);
                     }}
                   >
@@ -477,7 +477,7 @@ const VoteDetail = () => {
                 <div style={{ marginTop: 16 }}>
                   <div style={{ marginBottom: 8 }}>
                     <Text type="secondary">
-                      当前选择：{selectedOptions.length === 0 ? '未选择' : selectedOptions.map(id => {
+                      Current selection: {selectedOptions.length === 0 ? 'Not selected' : selectedOptions.map(id => {
                         const option = vote.options.find(opt => opt.id === id);
                         return option?.text;
                       }).join(', ')}
@@ -490,23 +490,15 @@ const VoteDetail = () => {
                     loading={voting}
                     disabled={selectedOptions.length === 0}
                   >
-                    {voting ? '提交中...' : '提交投票'}
+                    {voting ? 'Submitting...' : 'Submit vote'}
                   </Button>
-                  <div style={{ marginTop: 8 }}>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      调试信息 - 选项数量: {selectedOptions.length}, 
-                      投票状态: {vote.status}, 
-                      已投票: {hasVoted ? '是' : '否'}, 
-                      钱包连接: {isConnected ? '是' : '否'}
-                    </Text>
-                  </div>
                 </div>
               </Space>
             ) : (
               <div>
                 {!isConnected && (
                   <Alert
-                    message="请连接钱包参与投票"
+                    message="Please connect wallet to participate in vote"
                     type="warning"
                     style={{ marginBottom: 16 }}
                   />
@@ -514,7 +506,7 @@ const VoteDetail = () => {
                 
                 {hasVoted && (
                   <Alert
-                    message="您已参与过此投票"
+                    message="You have already participated in this vote"
                     type="success"
                     style={{ marginBottom: 16 }}
                   />
@@ -522,7 +514,7 @@ const VoteDetail = () => {
                 
                 {vote.status === 'pending' && (
                   <Alert
-                    message="投票尚未开始"
+                    message="Vote has not started yet"
                     type="info"
                     style={{ marginBottom: 16 }}
                   />
@@ -530,7 +522,7 @@ const VoteDetail = () => {
                 
                 {vote.status === 'ended' && (
                   <Alert
-                    message="投票已结束"
+                    message="Vote has ended"
                     type="info"
                     style={{ marginBottom: 16 }}
                   />
@@ -538,13 +530,13 @@ const VoteDetail = () => {
                 
                 {vote.status === 'cancelled' && (
                   <Alert
-                    message="投票已取消"
+                    message="Vote has been cancelled"
                     type="error"
                     style={{ marginBottom: 16 }}
                   />
                 )}
                 
-                {/* 显示投票结果 */}
+                {/* Show vote results */}
                 <Space direction="vertical" style={{ width: '100%' }}>
                   {vote.options.map(option => {
                     const percentage = vote.totalVotes > 0 
@@ -558,7 +550,7 @@ const VoteDetail = () => {
                             <Text strong>{option.text}</Text>
                           </Col>
                           <Col>
-                            <Text type="secondary">{option.votes} 票</Text>
+                            <Text type="secondary">{option.votes} votes</Text>
                           </Col>
                         </Row>
                         <Progress
@@ -575,9 +567,9 @@ const VoteDetail = () => {
           </Card>
         </Col>
 
-        {/* 投票历史 */}
+        {/* Vote history */}
         <Col xs={24} lg={8}>
-          <Card title="投票历史">
+          <Card title="Vote history">
             {!vote.anonymous ? (
               voteHistory.length > 0 ? (
                 <List
@@ -604,13 +596,13 @@ const VoteDetail = () => {
               ) : (
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂无投票记录"
+                  description="No vote history"
                 />
               )
             ) : (
               <Alert
-                message="匿名投票"
-                description="此投票为匿名投票，不显示投票记录"
+                message="Anonymous vote"
+                description="This vote is anonymous, no vote history will be displayed"
                 type="info"
               />
             )}

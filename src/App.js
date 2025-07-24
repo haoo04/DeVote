@@ -3,18 +3,29 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Layout, ConfigProvider, theme } from 'antd';
 import './App.css';
 
-// 组件导入
+// Components import
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import WalletProvider from './contexts/WalletContext';
 
-// 页面导入
+// Pages import
 import Dashboard from './pages/Dashboard';
 import CreateVote from './pages/CreateVote';
 import VoteList from './pages/VoteList';
 import VoteDetail from './pages/VoteDetail';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+
+// New pages import
+import OngoingVotes from './pages/OngoingVotes';
+import CompletedVotes from './pages/CompletedVotes';
+import Analytics from './pages/Analytics';
+import VoteHistory from './pages/VoteHistory';
+
+// Help pages import
+import Guide from './pages/Guide';
+import FAQ from './pages/FAQ';
+import About from './pages/About';
 
 const { Content } = Layout;
 
@@ -29,14 +40,14 @@ function App() {
       setIsMobile(width <= 768);
       
       if (width <= 768) {
-        setCollapsed(true); // 移动端默认折叠
+        setCollapsed(true); // Mobile default collapse
       } else if (width > 768 && width <= 1024) {
-        // 平板端可以选择性折叠
+        // Tablet can choose to collapse
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // 初始化
+    handleResize(); // Initialize
     
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -72,7 +83,7 @@ function App() {
             <Layout style={{ marginTop: '64px' }}>
               <Sidebar collapsed={collapsed} />
               
-              {/* 移动端遮罩层 */}
+              {/* Mobile overlay */}
               {isMobile && !collapsed && (
                 <div 
                   className="mobile-overlay"
@@ -112,6 +123,19 @@ function App() {
                     <Route path="/vote/:id" element={<VoteDetail />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/profile" element={<Profile />} />
+                    
+                    {/* Vote statistics module routes */}
+                    <Route path="/results/ongoing" element={<OngoingVotes />} />
+                    <Route path="/results/completed" element={<CompletedVotes />} />
+                    <Route path="/results/analytics" element={<Analytics />} />
+                    
+                    {/* User center routes */}
+                    <Route path="/history" element={<VoteHistory />} />
+                    
+                    {/* Help document routes */}
+                    <Route path="/help/guide" element={<Guide />} />
+                    <Route path="/help/faq" element={<FAQ />} />
+                    <Route path="/help/about" element={<About />} />
                   </Routes>
                 </Content>
               </Layout>

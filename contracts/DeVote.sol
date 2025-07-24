@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-contract DeVote {
-    // 投票类型枚举
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
+contract DeVote is Ownable, ReentrancyGuard, Pausable {
+    // Voting Type Enumeration
     enum VoteType { SingleChoice, MultiChoice }
     
-    // 投票状态枚举
+    // Voting status enumeration
     enum VoteStatus { Active, Ended, Cancelled }
     
-    // 投票结构体
+    // Voting structure
     struct Vote {
         uint256 id;
         string title;
@@ -27,12 +31,11 @@ contract DeVote {
         mapping(address => bool) allowedVoters;
     }
     
-    // 状态变量
+    // State variables
     mapping(uint256 => Vote) public votes;
     uint256 public voteCount;
-    address public owner;
     
-    // 事件
+    // Events
     event VoteCreated(
         uint256 indexed voteId,
         string title,
@@ -49,37 +52,42 @@ contract DeVote {
     
     event VoteEnded(uint256 indexed voteId);
     event VoteCancelled(uint256 indexed voteId);
+    event EmergencyVoteCancelled(uint256 indexed voteId, string reason);
     
-    // 修饰符
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
-        _;
-    }
-    
+    // Custom modifiers
     modifier onlyVoteCreator(uint256 _voteId) {
-        require(msg.sender == votes[_voteId].creator, "Only vote creator can call this function");
+        require(msg.sender == votes[_voteId].creator, "DeVote: only vote creator can call this function");
         _;
     }
     
     modifier voteExists(uint256 _voteId) {
-        require(_voteId < voteCount, "Vote does not exist");
+        require(_voteId < voteCount, "DeVote: vote does not exist");
         _;
     }
     
     modifier voteActive(uint256 _voteId) {
-        require(votes[_voteId].status == VoteStatus.Active, "Vote is not active");
-        require(block.timestamp >= votes[_voteId].startTime, "Vote has not started yet");
-        require(block.timestamp <= votes[_voteId].endTime, "Vote has ended");
+        require(votes[_voteId].status == VoteStatus.Active, "DeVote: vote is not active");
+        require(block.timestamp >= votes[_voteId].startTime, "DeVote: vote has not started yet");
+        require(block.timestamp <= votes[_voteId].endTime, "DeVote: vote has ended");
         _;
     }
     
-    // 构造函数
-    constructor() {
-        owner = msg.sender;
+    // Constructor - Using the Ownable constructor
+    constructor() Ownable(msg.sender) {
         voteCount = 0;
     }
     
-    // 创建投票
+    // Emergency pause function - Only the owner can pause the contract
+    function pause() public onlyOwner {
+        _pause();
+    }
+    
+    // Emergency unpause function - Only the owner can resume the contract
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+    
+    // Create Vote - Add nonReentrant and whenNotPaused protection
     function createVote(
         string memory _title,
         string memory _description,
@@ -89,11 +97,11 @@ contract DeVote {
         uint256 _endTime,
         bool _isPrivate,
         address[] memory _allowedVoters
-    ) public returns (uint256) {
-        require(bytes(_title).length > 0, "Title cannot be empty");
-        require(_options.length >= 2, "At least 2 options required");
-        require(_startTime < _endTime, "Invalid time range");
-        require(_endTime > block.timestamp, "End time must be in the future");
+    ) public nonReentrant whenNotPaused returns (uint256) {
+        require(bytes(_title).length > 0, "DeVote: title cannot be empty");
+        require(_options.length >= 2, "DeVote: at least 2 options required");
+        require(_startTime < _endTime, "DeVote: invalid time range");
+        require(_endTime > block.timestamp, "DeVote: end time must be in the future");
         
         uint256 voteId = voteCount++;
         Vote storage newVote = votes[voteId];
@@ -111,7 +119,7 @@ contract DeVote {
         newVote.totalVoters = 0;
         newVote.isPrivate = _isPrivate;
         
-        // 如果是私有投票，设置允许的投票者
+        // If it's a private vote, set allowed voters
         if (_isPrivate) {
             for (uint256 i = 0; i < _allowedVoters.length; i++) {
                 newVote.allowedVoters[_allowedVoters[i]] = true;
@@ -122,38 +130,40 @@ contract DeVote {
         return voteId;
     }
     
-    // 投票
+    // Vote - Add nonReentrant and whenNotPaused protection
     function castVote(uint256 _voteId, uint256[] memory _choices) 
         public 
+        nonReentrant 
+        whenNotPaused
         voteExists(_voteId) 
         voteActive(_voteId) 
     {
         Vote storage vote = votes[_voteId];
         
-        require(!vote.hasVoted[msg.sender], "Already voted");
-        require(_choices.length > 0, "Must select at least one option");
+        require(!vote.hasVoted[msg.sender], "DeVote: already voted");
+        require(_choices.length > 0, "DeVote: must select at least one option");
         
-        // 检查私有投票权限
+        // Check private vote permissions
         if (vote.isPrivate) {
-            require(vote.allowedVoters[msg.sender], "Not authorized to vote");
+            require(vote.allowedVoters[msg.sender], "DeVote: not authorized to vote");
         }
         
-        // 检查选择的有效性
+        // Check the validity of the selected options
         for (uint256 i = 0; i < _choices.length; i++) {
-            require(_choices[i] < vote.options.length, "Invalid option");
+            require(_choices[i] < vote.options.length, "DeVote: invalid option");
         }
         
-        // 单选投票只能选择一个选项
+        // Single choice voting allows only one option
         if (vote.voteType == VoteType.SingleChoice) {
-            require(_choices.length == 1, "Single choice vote allows only one option");
+            require(_choices.length == 1, "DeVote: single choice vote allows only one option");
         }
         
-        // 记录投票
+        // Record the vote
         vote.hasVoted[msg.sender] = true;
         vote.voterChoices[msg.sender] = _choices;
         vote.totalVoters++;
         
-        // 更新投票计数
+        // Update the vote count
         for (uint256 i = 0; i < _choices.length; i++) {
             vote.voteCounts[_choices[i]]++;
         }
@@ -161,33 +171,35 @@ contract DeVote {
         emit VoteCast(_voteId, msg.sender, _choices);
     }
     
-    // 结束投票
+    // End Vote - Add nonReentrant protection
     function endVote(uint256 _voteId) 
         public 
+        nonReentrant
         voteExists(_voteId) 
         onlyVoteCreator(_voteId) 
     {
         Vote storage vote = votes[_voteId];
-        require(vote.status == VoteStatus.Active, "Vote is not active");
+        require(vote.status == VoteStatus.Active, "DeVote: vote is not active");
         
         vote.status = VoteStatus.Ended;
         emit VoteEnded(_voteId);
     }
     
-    // 取消投票
+    // Cancel Vote - Add nonReentrant protection
     function cancelVote(uint256 _voteId) 
         public 
+        nonReentrant
         voteExists(_voteId) 
         onlyVoteCreator(_voteId) 
     {
         Vote storage vote = votes[_voteId];
-        require(vote.status == VoteStatus.Active, "Vote is not active");
+        require(vote.status == VoteStatus.Active, "DeVote: vote is not active");
         
         vote.status = VoteStatus.Cancelled;
         emit VoteCancelled(_voteId);
     }
     
-    // 获取投票基本信息
+    // Get Vote Basic Information
     function getVoteInfo(uint256 _voteId) 
         public 
         view 
@@ -222,7 +234,7 @@ contract DeVote {
         );
     }
     
-    // 获取投票结果
+    // Get Vote Results
     function getVoteResults(uint256 _voteId) 
         public 
         view 
@@ -232,7 +244,7 @@ contract DeVote {
         return votes[_voteId].voteCounts;
     }
     
-    // 检查用户是否已投票
+    // Check if the user has voted
     function hasUserVoted(uint256 _voteId, address _user) 
         public 
         view 
@@ -242,18 +254,18 @@ contract DeVote {
         return votes[_voteId].hasVoted[_user];
     }
     
-    // 获取用户投票选择
+    // Get the user's vote choices
     function getUserVoteChoices(uint256 _voteId, address _user) 
         public 
         view 
         voteExists(_voteId) 
         returns (uint256[] memory) 
     {
-        require(votes[_voteId].hasVoted[_user], "User has not voted");
+        require(votes[_voteId].hasVoted[_user], "DeVote: user has not voted");
         return votes[_voteId].voterChoices[_user];
     }
     
-    // 检查用户是否有投票权限
+    // Check if the user has voting permissions
     function canUserVote(uint256 _voteId, address _user) 
         public 
         view 
@@ -262,15 +274,15 @@ contract DeVote {
     {
         Vote storage vote = votes[_voteId];
         
-        // 检查投票是否活跃
+        // Check if the vote is active
         if (vote.status != VoteStatus.Active) return false;
         if (block.timestamp < vote.startTime) return false;
         if (block.timestamp > vote.endTime) return false;
         
-        // 检查用户是否已投票
+        // Check if the user has voted
         if (vote.hasVoted[_user]) return false;
         
-        // 检查私有投票权限
+        // Check private vote permissions
         if (vote.isPrivate) {
             return vote.allowedVoters[_user];
         }
@@ -278,8 +290,8 @@ contract DeVote {
         return true;
     }
     
-    // 获取所有投票ID列表
-    function getAllVoteIds() public view returns (uint256[] memory) {
+    // Get all vote ID lists
+    function getAllVoteIds() public view whenNotPaused returns (uint256[] memory) {
         uint256[] memory voteIds = new uint256[](voteCount);
         for (uint256 i = 0; i < voteCount; i++) {
             voteIds[i] = i;
@@ -287,8 +299,10 @@ contract DeVote {
         return voteIds;
     }
     
-    // 获取用户创建的投票ID列表
-    function getUserCreatedVotes(address _user) public view returns (uint256[] memory) {
+    // Get the user's created vote ID list
+    function getUserCreatedVotes(address _user) public view whenNotPaused returns (uint256[] memory) {
+        require(_user != address(0), "DeVote: invalid user address");
+        
         uint256[] memory tempVoteIds = new uint256[](voteCount);
         uint256 count = 0;
         
@@ -307,8 +321,10 @@ contract DeVote {
         return userVoteIds;
     }
     
-    // 获取用户参与的投票ID列表
-    function getUserParticipatedVotes(address _user) public view returns (uint256[] memory) {
+    // Get the user's participated vote ID list
+    function getUserParticipatedVotes(address _user) public view whenNotPaused returns (uint256[] memory) {
+        require(_user != address(0), "DeVote: invalid user address");
+        
         uint256[] memory tempVoteIds = new uint256[](voteCount);
         uint256 count = 0;
         
@@ -327,13 +343,50 @@ contract DeVote {
         return userVoteIds;
     }
     
-    // 自动结束过期的投票
-    function autoEndExpiredVotes() public {
+    // Automatically end expired votes - Add permission control and reentrancy protection
+    function autoEndExpiredVotes() public nonReentrant onlyOwner {
         for (uint256 i = 0; i < voteCount; i++) {
             if (votes[i].status == VoteStatus.Active && block.timestamp > votes[i].endTime) {
                 votes[i].status = VoteStatus.Ended;
                 emit VoteEnded(i);
             }
         }
+    }
+    
+    // Add a batch end expired vote security version (anyone can call)
+    function batchEndExpiredVotes(uint256[] calldata _voteIds) 
+        external 
+        nonReentrant 
+        whenNotPaused 
+    {
+        require(_voteIds.length > 0, "DeVote: empty vote IDs array");
+        require(_voteIds.length <= 100, "DeVote: too many votes to process at once");
+        
+        for (uint256 i = 0; i < _voteIds.length; i++) {
+            uint256 voteId = _voteIds[i];
+            if (voteId < voteCount) {
+                Vote storage vote = votes[voteId];
+                if (vote.status == VoteStatus.Active && block.timestamp > vote.endTime) {
+                    vote.status = VoteStatus.Ended;
+                    emit VoteEnded(voteId);
+                }
+            }
+        }
+    }
+    
+    // Add emergency cancel vote function (only owner)
+    function emergencyCancelVote(uint256 _voteId, string calldata _reason) 
+        external 
+        onlyOwner 
+        nonReentrant
+        voteExists(_voteId) 
+    {
+        Vote storage vote = votes[_voteId];
+        require(vote.status == VoteStatus.Active, "DeVote: vote is not active");
+        require(bytes(_reason).length > 0, "DeVote: reason cannot be empty");
+        
+        vote.status = VoteStatus.Cancelled;
+        emit VoteCancelled(_voteId);
+        emit EmergencyVoteCancelled(_voteId, _reason);
     }
 } 

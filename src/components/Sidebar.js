@@ -22,17 +22,17 @@ const Sidebar = ({ collapsed }) => {
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: '仪表板',
+      label: 'Dashboard',
     },
     {
       key: '/create',
       icon: <PlusOutlined />,
-      label: '发起投票',
+      label: 'Create Vote',
     },
     {
       key: '/votes',
       icon: <UnorderedListOutlined />,
-      label: '所有投票',
+      label: 'All Votes',
     },
     {
       type: 'divider',
@@ -40,19 +40,19 @@ const Sidebar = ({ collapsed }) => {
     {
       key: 'results',
       icon: <BarChartOutlined />,
-      label: '投票统计',
+      label: 'Vote Statistics',
       children: [
         {
           key: '/results/ongoing',
-          label: '进行中投票',
+          label: 'Ongoing Votes',
         },
         {
           key: '/results/completed',
-          label: '已完成投票',
+          label: 'Completed Votes',
         },
         {
           key: '/results/analytics',
-          label: '数据分析',
+          label: 'Analytics',
         },
       ],
     },
@@ -62,7 +62,7 @@ const Sidebar = ({ collapsed }) => {
     {
       key: '/admin',
       icon: <CrownOutlined />,
-      label: '管理中心',
+      label: 'Admin Center',
     },
     {
       type: 'divider',
@@ -70,45 +70,45 @@ const Sidebar = ({ collapsed }) => {
     {
       key: 'user',
       icon: <UserOutlined />,
-      label: '用户中心',
+      label: 'User Center',
       children: [
         {
           key: '/profile',
-          label: '个人资料',
+          label: 'Profile',
         },
         {
           key: '/history',
-          label: '投票历史',
+          label: 'Vote History',
         },
         {
           key: '/settings',
-          label: '设置',
+          label: 'Settings',
         },
       ],
     },
     {
       key: 'help',
       icon: <FileTextOutlined />,
-      label: '帮助文档',
+      label: 'Help',
       children: [
         {
           key: '/help/guide',
-          label: '使用指南',
+          label: 'Guide',
         },
         {
           key: '/help/faq',
-          label: '常见问题',
+          label: 'FAQ',
         },
         {
           key: '/help/about',
-          label: '关于我们',
+          label: 'About Us',
         },
       ],
     },
   ];
 
   const handleMenuClick = ({ key }) => {
-    // 如果是父级菜单项，不进行导航
+    // If it's a parent menu item, do not navigate
     if (['results', 'user', 'help'].includes(key)) {
       return;
     }
@@ -126,9 +126,9 @@ const Sidebar = ({ collapsed }) => {
         height: 'calc(100vh - 64px)',
         position: 'fixed',
         left: 0,
-        top: 64, // Header高度
+        top: 64, // Header height
         bottom: 0,
-        zIndex: 1001, // 确保在其他内容之上
+        zIndex: 1001, // Ensure it's above other content
       }}
     >
       <div style={{ height: '100%', borderRight: 0 }}>

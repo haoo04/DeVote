@@ -21,11 +21,11 @@ const WalletProvider = ({ children }) => {
   const [chainId, setChainId] = useState(null);
   const [balance, setBalance] = useState('0');
 
-  // 检查钱包连接状态
+  // Check wallet connection status
   useEffect(() => {
     checkConnection();
     
-    // 监听账户变更
+    // Listen for account changes
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
@@ -41,7 +41,7 @@ const WalletProvider = ({ children }) => {
     };
   }, []);
 
-  // 更新余额
+  // Update balance
   useEffect(() => {
     if (account && provider) {
       updateBalance();
@@ -65,13 +65,13 @@ const WalletProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('检查连接状态失败:', error);
+      console.error('Check connection status failed:', error);
     }
   };
 
   const connectMetaMask = async () => {
     if (!window.ethereum) {
-      message.error('请安装MetaMask钱包');
+      message.error('Please install MetaMask wallet');
       return false;
     }
 
@@ -88,11 +88,11 @@ const WalletProvider = ({ children }) => {
       setAccount(address);
       setChainId(network.chainId.toString());
 
-      message.success('钱包连接成功');
+      message.success('Wallet connected successfully');
       return true;
     } catch (error) {
-      console.error('连接MetaMask失败:', error);
-      message.error('连接钱包失败');
+      console.error('Connect to MetaMask failed:', error);
+      message.error('Connect to wallet failed');
       return false;
     } finally {
       setIsConnecting(false);
@@ -101,12 +101,12 @@ const WalletProvider = ({ children }) => {
 
   const connectWalletConnect = async () => {
     try {
-      // 这里可以集成WalletConnect v2
-      message.info('WalletConnect功能开发中...');
+      // Here can integrate WalletConnect v2
+      message.info('WalletConnect development in progress...');
       return false;
     } catch (error) {
-      console.error('连接WalletConnect失败:', error);
-      message.error('连接WalletConnect失败');
+      console.error('Connect to WalletConnect failed:', error);
+      message.error('Connect to WalletConnect failed');
       return false;
     }
   };
@@ -118,9 +118,9 @@ const WalletProvider = ({ children }) => {
       setSigner(null);
       setChainId(null);
       setBalance('0');
-      message.success('钱包已断开连接');
+      message.success('Wallet disconnected');
     } catch (error) {
-      console.error('断开连接失败:', error);
+      console.error('Disconnect failed:', error);
     }
   };
 
@@ -131,7 +131,7 @@ const WalletProvider = ({ children }) => {
         setBalance(ethers.formatEther(balance));
       }
     } catch (error) {
-      console.error('获取余额失败:', error);
+      console.error('Get balance failed:', error);
     }
   };
 
@@ -139,11 +139,11 @@ const WalletProvider = ({ children }) => {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x1' }], // 主网
+        params: [{ chainId: '0x1' }], // Mainnet
       });
     } catch (error) {
-      console.error('切换网络失败:', error);
-      message.error('切换到以太坊主网失败');
+      console.error('Switch network failed:', error);
+      message.error('Switch to Ethereum mainnet failed');
     }
   };
 
@@ -154,12 +154,12 @@ const WalletProvider = ({ children }) => {
         params: [chainConfig],
       });
     } catch (error) {
-      console.error('添加网络失败:', error);
-      message.error('添加网络失败');
+      console.error('Add network failed:', error);
+      message.error('Add network failed');
     }
   };
 
-  // 事件处理器
+  // Event handlers
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
       disconnect();
@@ -170,31 +170,31 @@ const WalletProvider = ({ children }) => {
 
   const handleChainChanged = (chainId) => {
     setChainId(chainId);
-    window.location.reload(); // 建议重新加载页面
+    window.location.reload(); // Suggest reload page
   };
 
   const handleDisconnect = () => {
     disconnect();
   };
 
-  // 格式化地址显示
+  // Format address display
   const formatAddress = (address) => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // 检查是否为正确的网络
+  // Check if it's the correct network
   const isCorrectNetwork = () => {
-    // 支持以太坊主网和本地测试网络
+    // Support Ethereum mainnet and local test networks
     const supportedChains = [
-      '1', '0x1',        // 以太坊主网
-      '31337', '0x7a69', // 本地测试网络 (Hardhat)
-      '1337', '0x539'    // 本地测试网络 (Ganache)
+      '1', '0x1',        // Ethereum mainnet
+      '31337', '0x7a69', // Local test network (Hardhat)
+      '1337', '0x539'    // Local test network (Ganache)
     ];
     return supportedChains.includes(chainId);
   };
 
-  // 切换到本地测试网络
+  // Switch to local test network
   const switchToLocalNetwork = async () => {
     try {
       await window.ethereum.request({
@@ -202,7 +202,7 @@ const WalletProvider = ({ children }) => {
         params: [{ chainId: '0x7a69' }], // 31337 in hex
       });
     } catch (error) {
-      // 如果网络不存在，尝试添加它
+      // If the network does not exist, try to add it
       if (error.code === 4902) {
         try {
           await window.ethereum.request({
@@ -220,96 +220,96 @@ const WalletProvider = ({ children }) => {
             }]
           });
         } catch (addError) {
-          console.error('添加本地网络失败:', addError);
-          message.error('添加本地网络失败');
+          console.error('Add local network failed:', addError);
+          message.error('Add local network failed');
         }
       } else {
-        console.error('切换网络失败:', error);
-        message.error('切换到本地网络失败');
+        console.error('Switch network failed:', error);
+        message.error('Switch to local network failed');
       }
     }
   };
 
-  // 获取网络名称
+  // Get network name
   const getNetworkName = () => {
     switch (chainId) {
       case '1':
       case '0x1':
-        return '以太坊主网';
+        return 'Ethereum mainnet';
       case '31337':
       case '0x7a69':
-        return 'Hardhat本地网络';
+        return 'Hardhat local network';
       case '1337':
       case '0x539':
-        return 'Ganache本地网络';
+        return 'Ganache local network';
       default:
-        return '未知网络';
+        return 'Unknown network';
     }
   };
 
-  // 合约交互功能
+  // Contract interaction functions
   const contractOperations = {
-    // 创建投票
+    // Create vote
     createVote: async (voteData) => {
       if (!account) {
-        message.error('请先连接钱包');
-        return { success: false, error: '未连接钱包' };
+        message.error('Please connect wallet');
+        return { success: false, error: 'Wallet not connected' };
       }
       
       if (!isCorrectNetwork()) {
-        message.error('请切换到正确的网络');
-        return { success: false, error: '网络错误' };
+        message.error('Please switch to the correct network');
+        return { success: false, error: 'Network error' };
       }
       
       return await contractUtils.createVote(voteData);
     },
     
-    // 参与投票
+    // Participate in voting
     castVote: async (voteId, choices) => {
       if (!account) {
-        message.error('请先连接钱包');
-        return { success: false, error: '未连接钱包' };
+        message.error('Please connect wallet');
+        return { success: false, error: 'Wallet not connected' };
       }
       
       if (!isCorrectNetwork()) {
-        message.error('请切换到正确的网络');
-        return { success: false, error: '网络错误' };
+        message.error('Please switch to the correct network');
+        return { success: false, error: 'Network error' };
       }
       
       return await contractUtils.castVote(voteId, choices);
     },
     
-    // 结束投票
+    // End voting
     endVote: async (voteId) => {
       if (!account) {
-        message.error('请先连接钱包');
-        return { success: false, error: '未连接钱包' };
+        message.error('Please connect wallet');
+        return { success: false, error: 'Wallet not connected' };
       }
       
       if (!isCorrectNetwork()) {
-        message.error('请切换到正确的网络');
-        return { success: false, error: '网络错误' };
+        message.error('Please switch to the correct network');
+        return { success: false, error: 'Network error' };
       }
       
       return await contractUtils.endVote(voteId);
     },
     
-    // 取消投票
+    // Cancel voting
     cancelVote: async (voteId) => {
       if (!account) {
-        message.error('请先连接钱包');
-        return { success: false, error: '未连接钱包' };
+        message.error('Please connect wallet');
+        return { success: false, error: 'Wallet not connected' };
       }
       
       if (!isCorrectNetwork()) {
-        message.error('请切换到正确的网络');
-        return { success: false, error: '网络错误' };
+        message.error('Please switch to the correct network');
+        return { success: false, error: 'Network error' };
       }
       
       return await contractUtils.cancelVote(voteId);
     },
     
-    // 获取投票信息
+    // Get vote information
     getVoteInfo: contractUtils.getVoteInfo,
     getAllVoteIds: contractUtils.getAllVoteIds,
     getUserCreatedVotes: contractUtils.getUserCreatedVotes,
@@ -321,7 +321,7 @@ const WalletProvider = ({ children }) => {
   };
 
   const value = {
-    // 状态
+    // State
     account,
     provider,
     signer,
@@ -329,7 +329,7 @@ const WalletProvider = ({ children }) => {
     chainId,
     balance,
     
-    // 方法
+    // Methods
     connectMetaMask,
     connectWalletConnect,
     disconnect,
@@ -341,10 +341,10 @@ const WalletProvider = ({ children }) => {
     isCorrectNetwork,
     getNetworkName,
     
-    // 计算属性
+    // Computed properties
     isConnected: !!account,
     
-    // 合约交互
+    // Contract interaction
     contractOperations,
   };
 

@@ -68,12 +68,12 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
 
   const handleDisconnect = () => {
     disconnect();
-    message.success('已断开钱包连接');
+    message.success('Wallet disconnected');
   };
 
   const WalletModal = () => (
     <Modal
-      title="连接钱包"
+      title="Connect Wallet"  
       open={walletModalVisible}
       onCancel={() => setWalletModalVisible(false)}
       footer={null}
@@ -95,7 +95,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
               <Text strong>MetaMask</Text>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                使用MetaMask钱包连接
+                Connect with MetaMask wallet
               </Text>
             </div>
           </Space>
@@ -117,7 +117,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
               <Text strong>WalletConnect</Text>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                使用WalletConnect协议连接
+                Connect with WalletConnect
               </Text>
             </div>
           </Space>
@@ -191,7 +191,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
           color: isDarkMode ? '#ff7875' : '#ff4d4f',
           padding: '4px 8px'
         }}
-        title="退出登录"
+        title="Logout"
       />
     </Space>
   );
@@ -222,7 +222,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
           
           {!isMobile && (
             <Text type="secondary" style={{ fontSize: '12px', marginLeft: 8 }}>
-              去中心化投票平台
+              Decentralized voting platform
             </Text>
           )}
         </Space>
@@ -236,7 +236,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
           />
 
           {!isCorrectNetwork() && isConnected && (
-            <Badge status="error" text={isMobile ? "" : "网络错误"} />
+            <Badge status="error" text={isMobile ? "" : "Network error"} />
           )}
 
           {isConnected ? (
@@ -249,7 +249,7 @@ const Header = ({ collapsed, onToggleSidebar, isDarkMode, onToggleTheme }) => {
               onClick={() => setWalletModalVisible(true)}
               size={isMobile ? "middle" : "large"}
             >
-              {isMobile ? "连接" : "连接钱包"}
+              {isMobile ? "Connect" : "Connect Wallet"}
             </Button>
           )}
         </Space>

@@ -1,8 +1,8 @@
 /**
- * 错误处理工具
+ * Error handling tools
  */
 
-// 防抖函数
+// Debounce function
 export const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -15,7 +15,7 @@ export const debounce = (func, wait) => {
   };
 };
 
-// 节流函数
+// Throttle function
 export const throttle = (func, limit) => {
   let inThrottle;
   return function (...args) {
@@ -27,20 +27,20 @@ export const throttle = (func, limit) => {
   };
 };
 
-// ResizeObserver错误处理
+// ResizeObserver error handling
 export const handleResizeObserverError = (error) => {
   if (
     error.message &&
     (error.message.includes('ResizeObserver loop completed with undelivered notifications') ||
      error.message.includes('ResizeObserver loop limit exceeded'))
   ) {
-    // 静默忽略ResizeObserver错误
+    // Silent ignore ResizeObserver error
     return true;
   }
   return false;
 };
 
-// 包装函数来处理可能引起ResizeObserver错误的操作
+// Wrapper function to handle operations that may cause ResizeObserver errors
 export const safeExecute = (fn, fallback = () => {}) => {
   try {
     return fn();
@@ -52,7 +52,7 @@ export const safeExecute = (fn, fallback = () => {}) => {
   }
 };
 
-// 安全的setState包装器
+// Safe setState wrapper
 export const safeSetState = (setter) => {
   return debounce((value) => {
     try {
@@ -65,7 +65,7 @@ export const safeSetState = (setter) => {
   }, 50);
 };
 
-// 为Select组件优化的默认配置
+// Default configuration optimized for Select component
 export const optimizedSelectProps = {
   virtual: false,
   dropdownMatchSelectWidth: false,
@@ -74,7 +74,7 @@ export const optimizedSelectProps = {
   listHeight: 200,
 };
 
-// 安全的DOM操作
+// Safe DOM operation
 export const safeDOMOperation = (operation) => {
   return new Promise((resolve) => {
     requestAnimationFrame(() => {

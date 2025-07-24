@@ -1,11 +1,9 @@
-/* DeVote - Web3投票平台样式 */
-
 .App {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* 布局调整 */
+/* Layout adjustments */
 .ant-layout {
   min-height: 100vh;
   position: relative;
@@ -42,7 +40,7 @@
   z-index: 1;
 }
 
-/* 当侧边栏折叠时调整内容区域 */
+/* Adjust content area when sidebar is collapsed */
 .ant-layout-has-sider .ant-layout-content {
   margin-left: 256px;
 }
@@ -57,7 +55,7 @@
   max-width: 80px !important;
 }
 
-/* 响应式布局 */
+/* Responsive layout */
 @media (max-width: 768px) {
   .ant-layout-content {
     margin-left: 0 !important;
@@ -80,32 +78,32 @@
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
   }
   
-  /* 移动端遮罩层 */
+  /* Mobile overlay */
   .mobile-overlay {
     display: block !important;
   }
   
-  /* 移动端隐藏一些元素 */
+  /* Mobile hide some elements */
   .mobile-hidden {
     display: none !important;
   }
   
-  /* 当侧边栏打开时防止主体滚动 */
+  /* Prevent main body from scrolling when sidebar is open */
   .ant-layout-sider:not(.ant-layout-sider-collapsed) ~ .ant-layout {
     overflow: hidden;
   }
   
-  /* 调整内容布局以适应小屏幕 */
+  /* Adjust content layout to fit small screens */
   .ant-layout-content {
     overflow-x: hidden;
   }
   
-  /* 移动端头部优化 */
+  /* Mobile header optimization */
   .ant-layout-header {
     padding: 0 16px;
   }
   
-  /* 头部钱包信息在移动端的优化 */
+  /* Wallet information optimization in mobile */
   .ant-layout-header .ant-space {
     flex-wrap: nowrap;
   }
@@ -114,26 +112,26 @@
     font-size: 10px !important;
   }
   
-  /* 移动端隐藏部分文本 */
+  /* Mobile hide some text */
   .mobile-hide-text {
     display: none !important;
   }
   
-  /* 钱包连接按钮在移动端的样式 */
+  /* Wallet connect button style in mobile */
   .ant-layout-header .ant-btn {
     font-size: 12px;
     padding: 4px 8px;
     height: auto;
   }
   
-  /* 头像和钱包信息容器的最大宽度 */
+  /* Maximum width of avatar and wallet information container */
   .wallet-info-container {
     max-width: 100px;
     overflow: hidden;
   }
 }
 
-/* 平板端适配 */
+/* Tablet adaptation */
 @media (min-width: 769px) and (max-width: 1024px) {
   .ant-layout-content {
     padding: 20px;
@@ -143,12 +141,12 @@
     display: none !important;
   }
   
-  /* 平板端头部优化 */
+  /* Tablet header optimization */
   .ant-layout-header {
     padding: 0 16px;
   }
   
-  /* 平板端表格和卡片优化 */
+  /* Tablet table and card optimization */
   .ant-card {
     margin-bottom: 16px;
   }
@@ -162,14 +160,14 @@
   }
 }
 
-/* 桌面端隐藏遮罩层 */
+/* Desktop hide overlay */
 @media (min-width: 1025px) {
   .mobile-overlay {
     display: none !important;
   }
 }
 
-/* 卡片样式优化 */
+/* Card style optimization */
 .ant-card {
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -195,7 +193,7 @@
   font-size: 16px;
 }
 
-/* 按钮样式 */
+/* Button style */
 .ant-btn-primary {
   background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
   border: none;
@@ -221,7 +219,7 @@
   transform: translateY(-1px);
 }
 
-/* 标签样式 */
+/* Tag style */
 .ant-tag {
   border-radius: 6px;
   font-weight: 500;
@@ -229,7 +227,7 @@
   padding: 2px 8px;
 }
 
-/* 进度条样式 */
+/* Progress bar style */
 .ant-progress-line {
   border-radius: 8px;
 }
@@ -238,7 +236,7 @@
   border-radius: 8px;
 }
 
-/* 输入框样式 */
+/* Input box style */
 .ant-input,
 .ant-select-selector {
   border-radius: 8px;
@@ -257,7 +255,7 @@
   z-index: 2;
 }
 
-/* 模态框样式 */
+/* Modal style */
 .ant-modal {
   border-radius: 12px;
 }
@@ -280,9 +278,9 @@
   border-radius: 0 0 12px 12px;
 }
 
-/* 下拉菜单基础样式 - 已整合到底部用户下拉菜单样式中 */
+/* Dropdown menu base style - integrated into bottom user dropdown menu style */
 
-/* 确保所有选择器下拉框正确显示 */
+/* Ensure all selector dropdowns display correctly */
 .ant-select-dropdown,
 .ant-cascader-dropdown,
 .ant-tooltip,
@@ -290,7 +288,7 @@
   z-index: 1050 !important;
 }
 
-/* 优化Select组件性能，减少ResizeObserver错误 */
+/* Optimize Select component performance, reduce ResizeObserver errors */
 .ant-select-dropdown .ant-select-item {
   transition: none !important;
 }
@@ -306,7 +304,7 @@
   transition: none !important;
 }
 
-/* 减少DOM变化引起的resize事件 */
+/* Reduce DOM changes caused by resize events */
 .ant-select {
   position: relative;
 }
@@ -315,28 +313,28 @@
   position: relative;
 }
 
-/* 优化渲染性能 */
+/* Optimize rendering performance */
 .ant-select-dropdown {
   will-change: auto;
 }
 
-/* 防止频繁的DOM重绘 */
+/* Prevent frequent DOM redraws */
 .ant-card,
 .ant-form-item {
   contain: layout style;
 }
 
-/* 消息提示样式 */
+/* Message prompt style */
 .ant-message {
   z-index: 1060;
 }
 
-/* 通知样式 */
+/* Notification style */
 .ant-notification {
   z-index: 1060;
 }
 
-/* 列表样式 */
+/* List style */
 .ant-list-item {
   border-radius: 8px;
   margin-bottom: 8px;
@@ -350,7 +348,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 表格样式 */
+/* Table style */
 .ant-table {
   border-radius: 12px;
   overflow: hidden;
@@ -362,7 +360,7 @@
   border-bottom: 2px solid #dee2e6;
 }
 
-/* 统计卡片样式 */
+/* Statistics card style */
 .ant-statistic {
   text-align: center;
 }
@@ -378,19 +376,19 @@
   color: #1890ff;
 }
 
-/* 头像样式 */
+/* Avatar style */
 .ant-avatar {
   border: 2px solid #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 徽章样式 */
+/* Badge style */
 .ant-badge-status-dot {
   width: 8px;
   height: 8px;
 }
 
-/* 面包屑样式 */
+/* Breadcrumb style */
 .ant-breadcrumb {
   margin-bottom: 16px;
 }
@@ -405,7 +403,7 @@
   color: #096dd9;
 }
 
-/* 分页样式 */
+/* Pagination style */
 .ant-pagination {
   text-align: center;
   margin-top: 32px;
@@ -425,12 +423,12 @@
   color: #fff;
 }
 
-/* 加载动画 */
+/* Loading animation */
 .ant-spin-dot {
   color: #1890ff;
 }
 
-/* 空状态样式 */
+/* Empty state style */
 .ant-empty {
   padding: 40px 0;
 }
@@ -439,7 +437,7 @@
   color: #666;
 }
 
-/* 警告框样式 */
+/* Alert box style */
 .ant-alert {
   border-radius: 8px;
   border: none;
@@ -462,7 +460,7 @@
   background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
 }
 
-/* 深色主题适配 */
+/* Dark theme adaptation */
 [data-theme='dark'] .ant-card {
   background: #1f1f1f;
   border-color: #303030;
@@ -472,7 +470,7 @@
   background: #141414;
 }
 
-/* 动画效果 */
+/* Animation effect */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -488,7 +486,7 @@
   animation: fadeInUp 0.5s ease-out;
 }
 
-/* 投票卡片特殊样式 */
+/* Vote card special style */
 .vote-card {
   transition: all 0.3s ease;
   cursor: pointer;
@@ -504,7 +502,7 @@
   border-radius: 4px;
 }
 
-/* 钱包连接按钮特殊样式 */
+/* Wallet connect button special style */
 .wallet-connect-btn {
   background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
   border: none;
@@ -516,7 +514,7 @@
   box-shadow: 0 4px 16px rgba(82, 196, 26, 0.4);
 }
 
-/* 状态指示器 */
+/* Status indicator */
 .status-indicator {
   display: inline-flex;
   align-items: center;
@@ -545,7 +543,7 @@
   border: 1px solid #ffd591;
 }
 
-/* 响应式隐藏 */
+/* Responsive hide */
 @media (max-width: 576px) {
   .mobile-hidden {
     display: none !important;
@@ -559,17 +557,17 @@
     text-align: left;
   }
   
-  /* 小屏幕下的表格滚动 */
+  /* Table scrolling on small screens */
   .ant-table-wrapper {
     overflow-x: auto;
   }
   
-  /* 小屏幕下的表单布局 */
+  /* Form layout on small screens */
   .ant-form-item {
     margin-bottom: 16px;
   }
   
-  /* 小屏幕下的按钮组 */
+  /* Button group on small screens */
   .ant-btn-group {
     flex-direction: column;
   }
@@ -579,7 +577,7 @@
   }
 }
 
-/* 滚动条样式 */
+/* Scrollbar style */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -598,19 +596,19 @@
   background: #a8a8a8;
 }
 
-/* 过渡动画 */
+/* Transition animation */
 * {
   transition: all 0.3s ease;
 }
 
-/* 确保内容区域正确显示 */
+/* Ensure content area displays correctly */
 .ant-layout-content {
   position: relative;
   z-index: 1;
   overflow-x: hidden;
 }
 
-/* 修复卡片内下拉框显示问题 */
+/* Fix dropdown box display problem in card */
 .ant-card {
   overflow: visible !important;
 }
@@ -619,7 +617,7 @@
   overflow: visible !important;
 }
 
-/* 确保表单项的下拉框正确显示 */
+/* Ensure dropdown box of form item displays correctly */
 .ant-form-item {
   overflow: visible !important;
 }
@@ -632,7 +630,7 @@
   overflow: visible !important;
 }
 
-/* 确保侧边栏在移动端正确显示 */
+/* Ensure sidebar displays correctly on mobile */
 @media (max-width: 768px) {
   .ant-layout-sider {
     top: 64px;
@@ -645,19 +643,19 @@
     transform: translateX(-100%);
   }
   
-  /* 确保内容区域在移动端正确显示 */
+  /* Ensure content area displays correctly on mobile */
   .ant-layout-content {
     width: 100%;
     padding: 16px;
   }
   
-  /* 防止水平滚动 */
+  /* Prevent horizontal scrolling */
   body {
     overflow-x: hidden;
   }
 }
 
-/* 特殊的渐变文字 */
+/* Special gradient text */
 .gradient-text {
   background: linear-gradient(135deg, #1890ff 0%, #722ed1 100%);
   -webkit-background-clip: text;
@@ -666,7 +664,7 @@
   font-weight: 600;
 }
 
-/* 头部用户头像下拉菜单特殊样式 */
+/* Special style for user avatar dropdown menu in header */
 .ant-layout-header .ant-dropdown {
   z-index: 1003 !important;
 }
@@ -685,19 +683,19 @@
   z-index: 1003 !important;
 }
 
-/* 时间输入框验证样式 */
+/* Time input box verification style */
 .ant-form-item-has-error .ant-input {
   border-color: #ff4d4f;
   box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1);
 }
 
-/* 钱包信息容器优化 */
+/* Wallet information container optimization */
 .wallet-info-container {
   min-width: 0;
   max-width: 120px;
 }
 
-/* 时间输入框特殊样式 */
+/* Time input box special style */
 .create-vote-form .time-input {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   letter-spacing: 1px;
@@ -707,7 +705,7 @@
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
 }
 
-/* 立即开始开关样式 */
+/* Immediately start switch style */
 .ant-switch {
   background: #f0f2f5;
   border: 1px solid #d9d9d9;
@@ -723,13 +721,13 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 开关内部文字样式 */
+/* Switch internal text style */
 .ant-switch-inner {
   font-size: 11px;
   font-weight: 500;
 }
 
-/* 确保DatePicker的父容器有正确的定位 */
+/* Ensure DatePicker parent container has correct positioning */
 .create-vote-form .ant-form-item {
   position: relative;
 }
@@ -738,12 +736,12 @@
   z-index: 9999 !important;
 }
 
-/* 为DatePicker容器添加相对定位 */
+/* Add relative positioning to DatePicker container */
 .create-vote-form .ant-col {
   position: relative;
 }
 
-/* 时间输入框提示样式 */
+/* Time input box hint style */
 .time-input-hint {
   font-size: 12px;
   color: #8c8c8c;

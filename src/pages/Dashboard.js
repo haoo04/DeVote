@@ -50,13 +50,13 @@ const Dashboard = () => {
     setLoading(true);
     
     try {
-      // 从智能合约获取统计数据
+      // Get statistics data from smart contract
       const allVoteIdsResult = await getAllVoteIds();
       if (allVoteIdsResult.success) {
         const voteIds = allVoteIdsResult.data;
         const totalVotes = voteIds.length;
         
-        // 获取所有投票信息来统计活跃投票数和参与人数
+        // Get all vote information to count active votes and participants
         let activeVotes = 0;
         let totalParticipants = 0;
         const allVotesInfo = [];
@@ -67,17 +67,17 @@ const Dashboard = () => {
             const voteInfo = voteInfoResult.data;
             allVotesInfo.push(voteInfo);
             
-            // 统计活跃投票
+            // Count active votes
             if (voteInfo.status === 'active') {
               activeVotes++;
             }
             
-            // 统计总参与人数
+            // Count total participants
             totalParticipants += voteInfo.totalVoters;
           }
         }
         
-        // 获取用户参与的投票数
+        // Get the number of votes the user participated in
         let participatedVotes = 0;
         if (account) {
           const userParticipatedResult = await getUserParticipatedVotes(account);
@@ -93,17 +93,17 @@ const Dashboard = () => {
           totalParticipants
         });
 
-        // 获取最近的投票列表（最近5个）
+        // Get the list of recent votes (the last 5)
         const recentVotesList = allVotesInfo
           .sort((a, b) => b.startTime - a.startTime)
           .slice(0, 5)
           .map(vote => {
-            // 直接使用getVoteInfo返回的正确状态，不再需要重复判断
+            // Use the correct status returned by getVoteInfo, no need to repeat the check
             return {
               id: vote.id,
               title: vote.title,
               description: vote.description,
-              status: vote.status, // 直接使用已经过时间判断的状态
+              status: vote.status, // Use the status that has already passed the time check
               participants: vote.totalVoters,
               totalVotes: vote.totalVoters,
               endTime: new Date(vote.endTime).toLocaleDateString(),
@@ -114,7 +114,7 @@ const Dashboard = () => {
         
         setRecentVotes(recentVotesList);
 
-        // 获取我创建的投票
+        // Get the votes I created
         if (account) {
           const myVotesResult = await getUserCreatedVotes(account);
           if (myVotesResult.success) {
@@ -123,12 +123,12 @@ const Dashboard = () => {
               const voteInfoResult = await getVoteInfo(voteId);
               if (voteInfoResult.success) {
                 const voteInfo = voteInfoResult.data;
-                // 直接使用getVoteInfo返回的正确状态，不再需要重复判断
+                // Use the correct status returned by getVoteInfo, no need to repeat the check
                 myVotesList.push({
                   id: voteInfo.id,
                   title: voteInfo.title,
                   description: voteInfo.description,
-                  status: voteInfo.status, // 直接使用已经过时间判断的状态
+                  status: voteInfo.status, // Use the status that has already passed the time check
                   participants: voteInfo.totalVoters,
                   totalVotes: voteInfo.totalVoters,
                   endTime: new Date(voteInfo.endTime).toLocaleDateString(),
@@ -144,24 +144,24 @@ const Dashboard = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('加载数据失败:', error);
+      console.error('Failed to load data:', error);
       setLoading(false);
     }
   };
 
   const getStatusTag = (status) => {
     const statusMap = {
-      'active': { color: 'green', text: '进行中' },
-      'ended': { color: 'blue', text: '已结束' },
-      'completed': { color: 'blue', text: '已结束' },
-      'pending': { color: 'orange', text: '未开始' },
-      'cancelled': { color: 'red', text: '已取消' }
+      'active': { color: 'green', text: 'Active' },
+      'ended': { color: 'blue', text: 'Ended' },
+      'completed': { color: 'blue', text: 'Ended' },
+      'pending': { color: 'orange', text: 'Pending' },
+      'cancelled': { color: 'red', text: 'Cancelled' }
     };
     const config = statusMap[status] || statusMap['pending'];
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-  // 计算投票时间进度
+  // Calculate the progress of the vote time
   const calculateTimeProgress = (item) => {
     if (item.status === 'ended' || item.status === 'completed' || item.status === 'cancelled') {
       return 100;
@@ -197,9 +197,9 @@ const Dashboard = () => {
         <Empty
           description={
             <div>
-              <Title level={4}>请先连接钱包</Title>
+              <Title level={4}>Please connect your wallet</Title>
               <Text type="secondary">
-                连接您的Web3钱包以访问DeVote平台
+                Connect your Web3 wallet to access the DeVote platform
               </Text>
             </div>
           }
@@ -211,15 +211,15 @@ const Dashboard = () => {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>仪表板</Title>
-        <Text type="secondary">欢迎回到DeVote去中心化投票平台</Text>
+        <Title level={2}>Dashboard</Title>
+        <Text type="secondary">Welcome back to the DeVote decentralized voting platform</Text>
       </div>
 
-      {/* 统计卡片 */}
+      {/* Statistics cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <StatCard
-            title="总投票数"
+            title="Total votes"
             value={stats.totalVotes}
             icon={<TrophyOutlined />}
             loading={loading}
@@ -227,7 +227,7 @@ const Dashboard = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <StatCard
-            title="进行中投票"
+            title="Active votes"
             value={stats.activeVotes}
             icon={<ClockCircleOutlined />}
             loading={loading}
@@ -235,7 +235,7 @@ const Dashboard = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <StatCard
-            title="我参与的投票"
+            title="Votes I participated in"
             value={stats.participatedVotes}
             icon={<UserOutlined />}
             loading={loading}
@@ -243,7 +243,7 @@ const Dashboard = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <StatCard
-            title="总参与人数"
+            title="Total participants"
             value={stats.totalParticipants}
             icon={<PercentageOutlined />}
             loading={loading}
@@ -252,16 +252,16 @@ const Dashboard = () => {
       </Row>
 
       <Row gutter={[16, 16]}>
-        {/* 最新投票 */}
+        {/* Latest votes */}
         <Col xs={24} lg={14}>
           <Card 
-            title="最新投票" 
+            title="Latest votes" 
             extra={
               <Button 
                 type="link" 
                 onClick={() => navigate('/votes')}
               >
-                查看全部
+                View all
               </Button>
             }
           >
@@ -277,7 +277,7 @@ const Dashboard = () => {
                           icon={<EyeOutlined />}
                           onClick={() => navigate(`/vote/${item.id}`)}
                         >
-                          查看详情
+                          View details
                         </Button>
                       ]}
                     >
@@ -294,10 +294,10 @@ const Dashboard = () => {
                             <br />
                             <Space style={{ marginTop: 8 }}>
                               <Text type="secondary">
-                                <UserOutlined /> {item.participants} 人参与
+                                <UserOutlined /> {item.participants} people participated
                               </Text>
                               <Text type="secondary">
-                                <ClockCircleOutlined /> 截止: {item.endTime}
+                                <ClockCircleOutlined /> End time: {item.endTime}
                               </Text>
                             </Space>
                             {item.status !== 'pending' && (
@@ -316,17 +316,17 @@ const Dashboard = () => {
               ) : (
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂无最新投票"
+                  description="No latest votes"
                 />
               )}
             </Spin>
           </Card>
         </Col>
 
-        {/* 我的投票 & 快速操作 */}
+        {/* My votes & Quick actions */}
         <Col xs={24} lg={10}>
           <Card 
-            title="快速操作" 
+            title="Quick actions" 
             style={{ marginBottom: 16 }}
           >
             <Space direction="vertical" style={{ width: '100%' }}>
@@ -337,24 +337,24 @@ const Dashboard = () => {
                 size="large"
                 onClick={() => navigate('/create')}
               >
-                发起新投票
+                Create a new vote
               </Button>
               <Button 
                 block 
                 onClick={() => navigate('/votes')}
               >
-                浏览所有投票
+                Browse all votes
               </Button>
               <Button 
                 block 
                 onClick={() => navigate('/profile')}
               >
-                查看我的资料
+                View my profile
               </Button>
             </Space>
           </Card>
 
-          <Card title="我发起的投票">
+          <Card title="Votes I created">
             <Spin spinning={loading}>
               {myVotes.length > 0 ? (
                 <List
@@ -368,7 +368,7 @@ const Dashboard = () => {
                           size="small"
                           onClick={() => navigate(`/vote/${item.id}`)}
                         >
-                          管理
+                          Manage
                         </Button>
                       ]}
                     >
@@ -381,7 +381,7 @@ const Dashboard = () => {
                         }
                         description={
                           <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {item.participants} 人参与 · 截止: {item.endTime}
+                            {item.participants} people participated · End time: {item.endTime}
                           </Text>
                         }
                       />
@@ -391,7 +391,7 @@ const Dashboard = () => {
               ) : (
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="您还没有发起过投票"
+                  description="You haven't created any votes yet"
                   style={{ padding: '20px 0' }}
                 />
               )}

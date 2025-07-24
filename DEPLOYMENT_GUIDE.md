@@ -1,170 +1,172 @@
-# DeVote 部署指南
+# DeVote Deployment Guideline
 
-## 项目概述
-DeVote是一个基于以太坊的去中心化投票平台，支持创建、管理和参与投票。
+## Project Overview
+DeVote is a decentralized voting platform based on Ethereum that supports creating, managing, and participating in voting.
 
-## 前置要求
+## Prerequisites
 
-1. **Node.js** (v16 或更高版本)
-2. **npm** 或 **yarn**
-3. **MetaMask** 浏览器扩展
+1. **Node.js** (v16 or higher)
 
-## 快速开始
+2. **npm** or **yarn**
 
-### 1. 启动本地区块链节点
+3. **MetaMask** browser extension
+
+## Quick Start
+
+### 1. Start a local blockchain node
 
 ```bash
-# 启动Hardhat本地节点
+# Start the Hardhat local node
 npx hardhat node
 ```
 
-这将启动一个本地以太坊节点，运行在 `http://127.0.0.1:8545`，并提供20个测试账户。
+This will start a local Ethereum node running at `http://127.0.0.1:8545` with 20 test accounts.
 
-### 2. 编译智能合约
+### 2. Compile smart contract
 
 ```bash
-# 编译合约
+# Compile the contract
 npm run hardhat:compile
 ```
 
-### 3. 部署智能合约
+### 3. Deploy smart contracts
 
 ```bash
-# 部署到本地网络
+# Deploy to local network
 npm run hardhat:deploy
 ```
 
-部署成功后，合约地址和ABI将自动导出到 `src/contracts/` 目录。
+After successful deployment, the contract address and ABI will be automatically exported to the `src/contracts/` directory.
 
-### 4. 启动前端应用
+### 4. Start the front-end application
 
 ```bash
-# 启动React应用
+# Start the React application
 npm start
 ```
 
-应用将在 `http://localhost:3000` 启动。
+The application will start at `http://localhost:3000`.
 
-## 配置MetaMask
+## Configure MetaMask
 
-### 1. 添加本地网络
+### 1. Add local network
 
-在MetaMask中添加以下网络配置：
+Add the following network configuration in MetaMask:
 
-- **网络名称**: Hardhat Local
+- **Network Name**: Hardhat Local
 - **RPC URL**: http://127.0.0.1:8545
-- **链ID**: 1337
-- **货币符号**: ETH
+- **Chain ID**: 1337
+- **Currency Symbol**: ETH
 
-### 2. 导入测试账户
+### 2. Import the test account
 
-使用Hardhat提供的测试账户私钥导入账户：
+Use the test account private key provided by Hardhat to import the account:
 
 ```
-测试助记词: test test test test test test test test test test test junk
+Test mnemonics: test test test test test test test test test test test junk
 ```
 
-或者使用具体的私钥（从hardhat node输出中获取）。
+Or use a specific private key (obtained from the hardhat node output).
 
-## 智能合约功能
+## Smart contract function
 
-### 核心功能
+### Core function
 
-1. **创建投票**
-   - 单选或多选投票
-   - 设置开始和结束时间
-   - 支持公开或私有投票
-   - 权限控制
+1. **Create vote**
+- Single or multiple choice voting
+- Set start and end time
+- Support public or private voting
+- Permission control
 
-2. **参与投票**
-   - 实时投票
-   - 防重复投票
-   - 投票验证
+2. **Participate in voting**
+- Real-time voting
+- Anti-duplicate voting
+- Voting verification
 
-3. **投票管理**
-   - 查看投票详情
-   - 获取投票结果
-   - 结束或取消投票
+3. **Voting management**
+- View voting details
+- Get voting results
+- End or cancel voting
 
-### 主要函数
+### Main function
 
-- `createVote()`: 创建新投票
-- `castVote()`: 参与投票
-- `getVoteInfo()`: 获取投票信息
-- `getVoteResults()`: 获取投票结果
-- `endVote()`: 结束投票
-- `cancelVote()`: 取消投票
+- `createVote()`: Create a new vote
+- `castVote()`: Participate in voting
+- `getVoteInfo()`: Get voting information
+- `getVoteResults()`: Get voting results
+- `endVote()`: End voting
+- `cancelVote()`: Cancel voting
 
-## 前端集成
+## Front-end integration
 
-### 钱包连接
+### Wallet connection
 
-应用支持通过MetaMask连接钱包，并自动检测网络。
+The application supports connecting to wallets through MetaMask and automatically detects the network.
 
-### 合约交互
+### Contract Interaction
 
-通过 `src/utils/contractUtils.js` 提供的工具函数与智能合约交互。
+Interact with smart contracts through the tool functions provided by `src/utils/contractUtils.js`.
 
-### 状态管理
+### State Management
 
-使用 `src/contexts/WalletContext.js` 管理钱包状态和合约操作。
+Use `src/contexts/WalletContext.js` to manage wallet status and contract operations.
 
-## 开发命令
+## Development commands
 
 ```bash
-# 编译合约
+# Compile contracts
 npm run hardhat:compile
 
-# 启动本地节点
+# Start local node
 npm run hardhat:node
 
-# 部署合约到本地网络
+# Deploy contracts to local network
 npm run hardhat:deploy
 
-# 运行合约测试
+# Run contract tests
 npm run hardhat:test
 
-# 启动前端应用
+# Start front-end application
 npm start
 ```
 
-## 测试
+## Test
 
-### 智能合约测试
+### Smart contract test
 
 ```bash
-# 运行所有测试
+# Run all tests
 npm run hardhat:test
 
-# 运行特定测试文件
+# Run specific test files
 npx hardhat test test/DeVote.js
 ```
 
-### 功能测试流程
+### Functional test process
 
-1. 连接MetaMask钱包
-2. 切换到本地测试网络
-3. 创建测试投票
-4. 使用不同账户参与投票
-5. 查看投票结果
+1. Connect MetaMask wallet
+2. Switch to local test network
+3. Create test votes
+4. Use different accounts to participate in voting
+5. View voting results
 
-## 常见问题
+## Frequently asked questions
 
-### Q: 合约未部署错误
-A: 确保已运行 `npm run hardhat:deploy` 部署合约
+### Q: Contract not deployed error
+A: Make sure you have run `npm run hardhat:deploy` to deploy the contract
 
-### Q: MetaMask连接失败
-A: 检查是否已安装MetaMask并连接到正确的网络
+### Q: MetaMask connection failed
+A: Check if MetaMask is installed and connected to the correct network
 
-### Q: 交易失败
-A: 确保账户有足够的ETH用于gas费用
+### Q: Transaction failed
+A: Make sure the account has enough ETH for gas fees
 
-### Q: 网络错误
-A: 确保Hardhat节点正在运行并且MetaMask连接到正确的网络
+### Q: Network error
+A: Make sure the Hardhat node is running and MetaMask is connected to the correct network
 
-## 安全注意事项
+## Security precautions
 
-1. 本项目仅用于学习和测试
-2. 不要在生产环境中使用测试私钥
-3. 部署到主网前请进行充分测试
-4. 考虑实施额外的安全措施
+1. This project is for learning and testing only
+2. Do not use test private keys in a production environment
+3. Please test thoroughly before deploying to the mainnet
+4. Consider implementing additional security measures

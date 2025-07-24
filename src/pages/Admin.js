@@ -85,18 +85,18 @@ const Admin = () => {
 
   const checkAdminStatus = async () => {
     try {
-      // 从智能合约检查用户是否为管理员
-      // 由于合约中没有明确的管理员检查功能，我们使用合约的owner函数
+      // Check if the user is an admin from the smart contract
+      // Since the contract does not have a clear admin check function, we use the owner function of the contract
       const contract = await getContract();
       const owner = await contract.owner();
       const isAdmin = account && account.toLowerCase() === owner.toLowerCase();
       setIsAdminUser(isAdmin);
       
       if (!isAdmin) {
-        message.error('您没有管理员权限');
+        message.error('You do not have admin privileges');
       }
     } catch (error) {
-      console.error('检查管理员权限失败:', error);
+      console.error('Check admin privileges failed:', error);
       setIsAdminUser(false);
     }
   };
@@ -104,13 +104,13 @@ const Admin = () => {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      // 从智能合约获取系统统计数据
+      // Get system statistics data from the smart contract
       const allVoteIdsResult = await getAllVoteIds();
       if (allVoteIdsResult.success) {
         const voteIds = allVoteIdsResult.data;
         const totalVotes = voteIds.length;
         
-        // 获取活跃投票数和总参与用户数
+        // Get the number of active votes and the total number of participating users
         let activeVotes = 0;
         let totalUsers = 0;
         const userSet = new Set();
@@ -120,15 +120,15 @@ const Admin = () => {
           if (voteInfoResult.success) {
             const voteInfo = voteInfoResult.data;
             
-            // 统计活跃投票
+            // Count active votes
             if (voteInfo.status === 'active') {
               activeVotes++;
             }
             
-            // 统计独特用户（创建者）
+            // Count unique users (creators)
             userSet.add(voteInfo.creator.toLowerCase());
             
-            // 假设每个投票都有一些参与者
+            // Assume each vote has some participants
             totalUsers += voteInfo.totalVoters;
           }
         }
@@ -137,10 +137,10 @@ const Admin = () => {
           totalUsers: userSet.size,
           totalVotes,
           activeVotes,
-          totalTransactions: totalVotes * 2 // 假设每个投票产生2个交易
+          totalTransactions: totalVotes * 2 // Assume each vote generates 2 transactions
         });
         
-        // 获取用户列表（模拟数据，因为合约中没有存储用户详细信息）
+        // Get user list (simulated data, because the contract does not store user detailed information)
         const mockUsers = Array.from(userSet).map((address, index) => ({
           id: index + 1,
           address,
@@ -155,41 +155,41 @@ const Admin = () => {
         setUsers(mockUsers);
       }
 
-      // 获取权限配置（模拟数据）
+      // Get permission configuration (simulated data)
       const mockPermissions = [
-        { id: 1, name: '创建投票', description: '允许用户创建投票', enabled: true, requiredRole: 'user' },
-        { id: 2, name: '参与投票', description: '允许用户参与投票', enabled: true, requiredRole: 'user' },
-        { id: 3, name: '查看结果', description: '允许用户查看投票结果', enabled: true, requiredRole: 'user' },
-        { id: 4, name: '分享投票', description: '允许用户分享投票链接', enabled: true, requiredRole: 'user' },
-        { id: 5, name: '删除投票', description: '允许用户删除自己的投票', enabled: false, requiredRole: 'moderator' }
+        { id: 1, name: 'Create vote', description: 'Allow users to create votes', enabled: true, requiredRole: 'user' },
+        { id: 2, name: 'Participate in voting', description: 'Allow users to participate in voting', enabled: true, requiredRole: 'user' },
+        { id: 3, name: 'View results', description: 'Allow users to view vote results', enabled: true, requiredRole: 'user' },
+        { id: 4, name: 'Share vote', description: 'Allow users to share vote links', enabled: true, requiredRole: 'user' },
+        { id: 5, name: 'Delete vote', description: 'Allow users to delete their own votes', enabled: false, requiredRole: 'moderator' }
       ];
       
       setPermissions(mockPermissions);
 
-      // 获取审计日志（模拟数据）
+      // Get audit logs (simulated data)
       const mockAuditLogs = [
         {
           id: 1,
           timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
           user: account,
-          action: '查看管理面板',
-          details: '管理员访问了系统管理面板',
+          action: 'View management panel',
+          details: 'Admin accessed the system management panel',
           type: 'info'
         },
         {
           id: 2,
           timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
           user: 'system',
-          action: '系统启动',
-          details: '系统成功启动并开始运行',
+          action: 'System started',
+          details: 'System successfully started and started running',
           type: 'success'
         },
         {
           id: 3,
           timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
           user: 'unknown',
-          action: '访问被拒绝',
-          details: '非管理员用户尝试访问管理面板',
+          action: 'Access denied',
+          details: 'Non-admin user tried to access the management panel',
           type: 'warning'
         }
       ];
@@ -198,32 +198,32 @@ const Admin = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('加载管理数据失败:', error);
-      message.error('加载管理数据失败');
+      console.error('Failed to load admin data:', error);
+      message.error('Failed to load admin data');
       setLoading(false);
     }
   };
 
   const handleDeleteUser = async (userId) => {
     try {
-      // 调用智能合约删除用户
-      // 由于合约中没有用户管理功能，这里只是模拟删除
+      // Call the smart contract to delete the user
+      // Since the contract does not have user management functionality, this is just a simulation of deletion
       setUsers(users.filter(user => user.id !== userId));
-      message.success('用户已删除');
+      message.success('User deleted');
       
-      // 添加审计日志
+      // Add audit log
       const newLog = {
         id: auditLogs.length + 1,
         timestamp: new Date().toISOString(),
         user: account,
-        action: '删除用户',
-        details: `管理员删除了用户 ID: ${userId}`,
+        action: 'Delete user',
+        details: `Admin deleted user ID: ${userId}`,
         type: 'warning'
       };
       setAuditLogs([newLog, ...auditLogs]);
     } catch (error) {
-      console.error('删除用户失败:', error);
-      message.error('删除用户失败，请重试');
+      console.error('Failed to delete user:', error);
+      message.error('Failed to delete user, please try again');
     }
   };
 
@@ -233,9 +233,9 @@ const Admin = () => {
 
   const getRoleTag = (role) => {
     const roleConfig = {
-      'admin': { color: 'red', icon: <CrownOutlined />, text: '管理员' },
-      'moderator': { color: 'orange', icon: <SafetyOutlined />, text: '版主' },
-      'user': { color: 'blue', icon: <UserOutlined />, text: '用户' }
+      'admin': { color: 'red', icon: <CrownOutlined />, text: 'Admin' },
+      'moderator': { color: 'orange', icon: <SafetyOutlined />, text: 'Moderator' },
+      'user': { color: 'blue', icon: <UserOutlined />, text: 'User' }
     };
     const config = roleConfig[role] || roleConfig['user'];
     return (
@@ -247,9 +247,9 @@ const Admin = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'active': { status: 'success', text: '正常' },
-      'banned': { status: 'error', text: '封禁' },
-      'suspended': { status: 'warning', text: '暂停' }
+      'active': { status: 'success', text: 'Active' },
+      'banned': { status: 'error', text: 'Banned' },
+      'suspended': { status: 'warning', text: 'Suspended' }
     };
     const config = statusConfig[status] || statusConfig['active'];
     return <Badge status={config.status} text={config.text} />;
@@ -268,8 +268,8 @@ const Admin = () => {
       const values = await form.validateFields();
       console.log('Modal values:', values);
       
-      // 调用智能合约执行用户操作
-      // 由于合约中没有用户管理功能，这里只是模拟操作
+      // Call the smart contract to perform user operations
+      // Since the contract does not have user management functionality, this is just a simulation of the operation
       if (modalType === 'add') {
         const newUser = {
           id: users.length + 1,
@@ -283,13 +283,13 @@ const Admin = () => {
         };
         setUsers([...users, newUser]);
         
-        // 添加审计日志
+        // Add audit log
         const newLog = {
           id: auditLogs.length + 1,
           timestamp: new Date().toISOString(),
           user: account,
-          action: '添加用户',
-          details: `管理员添加了新用户: ${values.address}`,
+          action: 'Add user',
+          details: `Admin added a new user: ${values.address}`,
           type: 'success'
         };
         setAuditLogs([newLog, ...auditLogs]);
@@ -299,43 +299,43 @@ const Admin = () => {
         );
         setUsers(updatedUsers);
         
-        // 添加审计日志
+        // Add audit log
         const newLog = {
           id: auditLogs.length + 1,
           timestamp: new Date().toISOString(),
           user: account,
-          action: '编辑用户',
-          details: `管理员编辑了用户: ${values.address}`,
+          action: 'Edit user',
+          details: `Admin edited user: ${values.address}`,
           type: 'info'
         };
         setAuditLogs([newLog, ...auditLogs]);
       }
       
-      message.success('操作成功');
+      message.success('Operation successful');
       setModalVisible(false);
       form.resetFields();
     } catch (error) {
-      console.error('操作失败:', error);
-      message.error('操作失败，请重试');
+      console.error('Operation failed:', error);
+      message.error('Operation failed, please try again');
     }
   };
 
   const handlePermissionToggle = (permission) => {
-    // 调用智能合约切换权限状态
-    // 由于合约中没有权限管理功能，这里只是模拟切换
+    // Call the smart contract to switch permission status
+    // Since the contract does not have permission management functionality, this is just a simulation of switching
     const newPermissions = permissions.map(p => 
       p.id === permission.id ? { ...p, enabled: !p.enabled } : p
     );
     setPermissions(newPermissions);
-    message.success(`权限 "${permission.name}" 已${permission.enabled ? '禁用' : '启用'}`);
+    message.success(`Permission "${permission.name}" is ${permission.enabled ? 'disabled' : 'enabled'}`);
     
-    // 添加审计日志
+    // Add audit log
     const newLog = {
       id: auditLogs.length + 1,
       timestamp: new Date().toISOString(),
       user: account,
-      action: '权限变更',
-      details: `管理员${permission.enabled ? '禁用' : '启用'}了权限: ${permission.name}`,
+      action: 'Permission change',
+      details: `Admin ${permission.enabled ? 'disabled' : 'enabled'} permission: ${permission.name}`,
       type: 'info'
     };
     setAuditLogs([newLog, ...auditLogs]);
@@ -343,7 +343,7 @@ const Admin = () => {
 
   const userColumns = [
     {
-      title: '用户地址',
+      title: 'User address',
       dataIndex: 'address',
       key: 'address',
       render: (address) => (
@@ -354,39 +354,39 @@ const Admin = () => {
       )
     },
     {
-      title: '角色',
+      title: 'Role',
       dataIndex: 'role',
       key: 'role',
       render: (role) => getRoleTag(role)
     },
     {
-      title: '状态',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status) => getStatusBadge(status)
     },
     {
-      title: '加入时间',
+      title: 'Join date',
       dataIndex: 'joinDate',
       key: 'joinDate'
     },
     {
-      title: '最后活跃',
+      title: 'Last active',
       dataIndex: 'lastActive',
       key: 'lastActive'
     },
     {
-      title: '创建投票',
+      title: 'Create vote',
       dataIndex: 'votesCreated',
       key: 'votesCreated'
     },
     {
-      title: '参与投票',
+      title: 'Participate in voting',
       dataIndex: 'votesParticipated',
       key: 'votesParticipated'
     },
     {
-      title: '操作',
+      title: 'Operation',
       key: 'action',
       render: (_, record) => (
         <Space>
@@ -395,21 +395,21 @@ const Admin = () => {
             icon={<EyeOutlined />}
             onClick={() => handleUserAction('view', record)}
           >
-            查看
+            View
           </Button>
           <Button
             type="link"
             icon={<EditOutlined />}
             onClick={() => handleUserAction('edit', record)}
           >
-            编辑
+            Edit
           </Button>
           <Popconfirm
-            title="确定要删除这个用户吗？"
+            title="Are you sure you want to delete this user?"
             onConfirm={() => handleDeleteUser(record.id)}
           >
             <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
+              Delete
             </Button>
           </Popconfirm>
         </Space>
@@ -420,8 +420,8 @@ const Admin = () => {
   if (!isConnected) {
     return (
       <Alert
-        message="请先连接钱包"
-        description="您需要连接Web3钱包才能访问管理功能"
+        message="Please connect your wallet"
+        description="You need to connect your Web3 wallet to access the management function"
         type="warning"
         showIcon
       />
@@ -431,8 +431,8 @@ const Admin = () => {
   if (!isAdminUser) {
     return (
       <Alert
-        message="权限不足"
-        description="您没有权限访问管理功能"
+        message="Permission denied"
+        description="You do not have permission to access the management function"
         type="error"
         showIcon
       />
@@ -442,17 +442,17 @@ const Admin = () => {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>管理中心</Title>
-        <Text type="secondary">系统管理和权限设置</Text>
+        <Title level={2}>Management Center</Title>
+        <Text type="secondary">System management and permission settings</Text>
       </div>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="概览" key="overview">
+        <TabPane tab="Overview" key="overview">
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="总用户数"
+                  title="Total users"
                   value={systemStats.totalUsers}
                   prefix={<UserOutlined />}
                   loading={loading}
@@ -462,7 +462,7 @@ const Admin = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="总投票数"
+                  title="Total votes"
                   value={systemStats.totalVotes}
                   prefix={<BarChartOutlined />}
                   loading={loading}
@@ -472,7 +472,7 @@ const Admin = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="进行中投票"
+                  title="Ongoing votes"
                   value={systemStats.activeVotes}
                   prefix={<BarChartOutlined />}
                   loading={loading}
@@ -482,7 +482,7 @@ const Admin = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="总交易数"
+                  title="Total transactions"
                   value={systemStats.totalTransactions}
                   prefix={<BarChartOutlined />}
                   loading={loading}
@@ -491,7 +491,7 @@ const Admin = () => {
             </Col>
           </Row>
 
-          <Card title="最新审计日志">
+          <Card title="Latest audit logs">
             <Spin spinning={loading}>
               {auditLogs.length > 0 ? (
                 <List
@@ -524,23 +524,23 @@ const Admin = () => {
               ) : (
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂无审计日志"
+                  description="No audit logs"
                 />
               )}
             </Spin>
           </Card>
         </TabPane>
 
-        <TabPane tab="用户管理" key="users">
+        <TabPane tab="User management" key="users">
           <Card
-            title="用户列表"
+            title="User list"
             extra={
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => handleUserAction('add')}
               >
-                添加用户
+                Add user
               </Button>
             }
           >
@@ -552,21 +552,21 @@ const Admin = () => {
               locale={{
                 emptyText: <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂无用户数据"
+                  description="No user data"
                 />
               }}
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
-                  `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                  `Total ${total} items`
               }}
             />
           </Card>
         </TabPane>
 
-        <TabPane tab="权限管理" key="permissions">
-          <Card title="权限设置">
+        <TabPane tab="Permission management" key="permissions">
+          <Card title="Permission settings">
             <Spin spinning={loading}>
               {permissions.length > 0 ? (
                 <List
@@ -587,7 +587,7 @@ const Admin = () => {
                             <Text type="secondary">{permission.description}</Text>
                             <br />
                             <Text type="secondary" style={{ fontSize: '12px' }}>
-                              需要角色: {getRoleTag(permission.requiredRole)}
+                              Required role: {getRoleTag(permission.requiredRole)}
                             </Text>
                           </div>
                         }
@@ -598,21 +598,21 @@ const Admin = () => {
               ) : (
                 <Empty 
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂无权限配置"
+                  description="No permission configuration"
                 />
               )}
             </Spin>
           </Card>
         </TabPane>
 
-        <TabPane tab="系统设置" key="settings">
-          <Card title="系统配置">
+        <TabPane tab="System settings" key="settings">
+          <Card title="System settings">
             <Form layout="vertical" initialValues={systemSettings}>
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item
                     name="votingEnabled"
-                    label="启用投票功能"
+                    label="Enable voting function"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -621,7 +621,7 @@ const Admin = () => {
                 <Col span={12}>
                   <Form.Item
                     name="enableAnonymousVoting"
-                    label="允许匿名投票"
+                    label="Allow anonymous voting"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -633,7 +633,7 @@ const Admin = () => {
                 <Col span={12}>
                   <Form.Item
                     name="minVotingPeriod"
-                    label="最短投票周期 (小时)"
+                    label="Shortest voting period (hours)"
                   >
                     <Input type="number" />
                   </Form.Item>
@@ -641,7 +641,7 @@ const Admin = () => {
                 <Col span={12}>
                   <Form.Item
                     name="maxVotingPeriod"
-                    label="最长投票周期 (小时)"
+                    label="Longest voting period (hours)"
                   >
                     <Input type="number" />
                   </Form.Item>
@@ -652,7 +652,7 @@ const Admin = () => {
                 <Col span={12}>
                   <Form.Item
                     name="maxOptionsPerVote"
-                    label="每个投票最大选项数"
+                    label="Maximum number of options per vote"
                   >
                     <Input type="number" />
                   </Form.Item>
@@ -660,7 +660,7 @@ const Admin = () => {
                 <Col span={12}>
                   <Form.Item
                     name="requireEmailVerification"
-                    label="需要邮箱验证"
+                    label="Require email verification"
                     valuePropName="checked"
                   >
                     <Switch />
@@ -671,28 +671,28 @@ const Admin = () => {
               <Form.Item>
                 <Button type="primary" onClick={async () => {
                   try {
-                    // 保存系统设置到智能合约
-                    // 由于合约中没有系统设置功能，这里只是模拟保存
-                    // 实际应用中应该调用合约的设置保存函数
+                    // Save system settings to the smart contract
+                    // Since the contract does not have system settings functionality, this is just a simulation of saving
+                    // In actual application, the contract's setting saving function should be called
                     
-                    // 添加审计日志
+                    // Add audit log
                     const newLog = {
                       id: auditLogs.length + 1,
                       timestamp: new Date().toISOString(),
                       user: account,
-                      action: '系统设置',
-                      details: '管理员更新了系统设置',
+                      action: 'System settings',
+                      details: 'Admin updated system settings',
                       type: 'info'
                     };
                     setAuditLogs([newLog, ...auditLogs]);
                     
-                    message.success('设置已保存');
+                    message.success('Settings saved');
                   } catch (error) {
-                    console.error('保存设置失败:', error);
-                    message.error('保存设置失败，请重试');
+                    console.error('Failed to save settings:', error);
+                    message.error('Failed to save settings, please try again');
                   }
                 }}>
-                  保存设置
+                  Save settings
                 </Button>
               </Form.Item>
             </Form>
@@ -700,11 +700,11 @@ const Admin = () => {
         </TabPane>
       </Tabs>
 
-      {/* 用户操作模态框 */}
+      {/* User operation modal */}
       <Modal
         title={
-          modalType === 'add' ? '添加用户' :
-          modalType === 'edit' ? '编辑用户' : '查看用户'
+          modalType === 'add' ? 'Add user' :
+          modalType === 'edit' ? 'Edit user' : 'View user'
         }
         open={modalVisible}
         onOk={handleModalOk}
@@ -712,45 +712,45 @@ const Admin = () => {
           setModalVisible(false);
           form.resetFields();
         }}
-        okText="确定"
-        cancelText="取消"
+        okText="Confirm"
+        cancelText="Cancel"
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="address"
-            label="钱包地址"
-            rules={[{ required: true, message: '请输入钱包地址' }]}
+            label="Wallet address"
+            rules={[{ required: true, message: 'Please enter wallet address' }]}
           >
             <Input placeholder="0x..." />
           </Form.Item>
 
           <Form.Item
             name="role"
-            label="用户角色"
-            rules={[{ required: true, message: '请选择用户角色' }]}
+            label="User role"
+            rules={[{ required: true, message: 'Please select user role' }]}
           >
             <Select 
               virtual={false}
               dropdownStyle={{ zIndex: 1050 }}
             >
-              <Option value="user">用户</Option>
-              <Option value="moderator">版主</Option>
-              <Option value="admin">管理员</Option>
+              <Option value="user">User</Option>
+              <Option value="moderator">Moderator</Option>
+              <Option value="admin">Admin</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="status"
-            label="账户状态"
-            rules={[{ required: true, message: '请选择账户状态' }]}
+            label="Account status"
+            rules={[{ required: true, message: 'Please select account status' }]}
           >
             <Select 
               virtual={false}
               dropdownStyle={{ zIndex: 1050 }}
             >
-              <Option value="active">正常</Option>
-              <Option value="suspended">暂停</Option>
-              <Option value="banned">封禁</Option>
+              <Option value="active">Active</Option>
+              <Option value="suspended">Suspended</Option>
+              <Option value="banned">Banned</Option>
             </Select>
           </Form.Item>
         </Form>

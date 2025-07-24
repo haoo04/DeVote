@@ -1,73 +1,73 @@
 import { ethers } from 'ethers';
 
-// 默认合约地址（将在部署后更新）
+// Default contract address (will be updated after deployment)
 let contractAddress = null;
 let contractABI = null;
 
-// 动态导入合约地址和ABI
+// Dynamically import contract address and ABI
 const loadContractData = async () => {
   try {
-    console.log('正在导入合约地址和ABI...');
+    console.log('Importing contract address and ABI...');
     const addressData = await import('../contracts/contract-address.json');
     const abiData = await import('../contracts/DeVote.json');
     
     contractAddress = addressData.DeVote;
     contractABI = abiData.abi;
     
-    console.log('合约地址加载成功:', contractAddress);
-    console.log('ABI加载成功:', contractABI ? 'Yes' : 'No');
+    console.log('Contract address loaded:', contractAddress);
+    console.log('ABI loaded:', contractABI ? 'Yes' : 'No');
     
     if (!contractAddress) {
-      throw new Error('合约地址未找到');
+      throw new Error('Contract address not found');
     }
     
     if (!contractABI) {
-      throw new Error('合约ABI未找到');
+      throw new Error('Contract ABI not found');
     }
     
     return { contractAddress, contractABI };
   } catch (error) {
     console.error('Failed to load contract data:', error);
-    throw new Error('合约尚未部署，请先部署合约');
+    throw new Error('Contract not deployed, please deploy the contract first');
   }
 };
 
-// 获取合约实例
+// Get contract instance
 export const getContract = async (signer = null) => {
   try {
     if (!contractAddress || !contractABI) {
-      console.log('正在加载合约数据...');
+      console.log('Loading contract data...');
       await loadContractData();
     }
     
-    console.log('合约地址:', contractAddress);
-    console.log('ABI已加载:', contractABI ? 'Yes' : 'No');
+    console.log('Contract address:', contractAddress);
+    console.log('ABI loaded:', contractABI ? 'Yes' : 'No');
     
     if (!window.ethereum) {
-      throw new Error('请安装MetaMask或其他Web3钱包');
+      throw new Error('Please install MetaMask or other Web3 wallets');
     }
     
     const provider = new ethers.BrowserProvider(window.ethereum);
     const contractInstance = new ethers.Contract(contractAddress, contractABI, signer || provider);
     
-    console.log('合约实例创建成功:', contractInstance.target);
+    console.log('Contract instance created successfully:', contractInstance.target);
     return contractInstance;
   } catch (error) {
-    console.error('获取合约实例失败:', error);
+    console.error('Failed to get contract instance:', error);
     throw error;
   }
 };
 
-// 获取带签名者的合约实例
+// Get contract instance with signer
 export const getContractWithSigner = async () => {
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
   return getContract(signer);
 };
 
-// 合约交互函数
+// Contract interaction functions
 
-// 创建投票
+// Create vote
 export const createVote = async ({
   title,
   description,
@@ -81,11 +81,11 @@ export const createVote = async ({
   try {
     const contract = await getContractWithSigner();
     
-    // 将时间戳转换为秒
+    // Convert timestamps to seconds
     const startTimestamp = Math.floor(startTime / 1000);
     const endTimestamp = Math.floor(endTime / 1000);
     
-    // 投票类型：0 = SingleChoice, 1 = MultiChoice
+    // Vote type: 0 = SingleChoice, 1 = MultiChoice
     const voteTypeNum = voteType === 'single' ? 0 : 1;
     
     const tx = await contract.createVote(
@@ -101,7 +101,7 @@ export const createVote = async ({
     
     const receipt = await tx.wait();
     
-    // 从事件中获取投票ID
+    // Get vote ID from event
     const voteCreatedEvent = receipt.logs.find(log => {
       try {
         const parsedLog = contract.interface.parseLog(log);
@@ -122,7 +122,7 @@ export const createVote = async ({
     
     return { success: true, txHash: receipt.hash };
   } catch (error) {
-    console.error('创建投票失败:', error);
+    console.error('Failed to create vote:', error);
     return { success: false, error: error.message };
   }
 };
@@ -130,68 +130,68 @@ export const createVote = async ({
 // 参与投票
 export const castVote = async (voteId, choices) => {
   try {
-    console.log('开始投票 - voteId:', voteId, '类型:', typeof voteId);
-    console.log('投票选择 - choices:', choices, '类型:', typeof choices, '是否为数组:', Array.isArray(choices));
+    console.log('Start voting - voteId:', voteId, 'type:', typeof voteId);
+    console.log('Vote choices:', choices, 'type:', typeof choices, 'is array:', Array.isArray(choices));
     
     const contract = await getContractWithSigner();
-    console.log('获取带签名者的合约成功');
+    console.log('Successfully got contract with signer');
     
-    // 确保voteId是number类型，choices是number数组
+    // Ensure voteId is number type, choices is number array
     const normalizedVoteId = Number(voteId);
     const normalizedChoices = choices.map(choice => Number(choice));
     
-    console.log('标准化后的参数 - voteId:', normalizedVoteId, 'choices:', normalizedChoices);
+    console.log('Normalized parameters - voteId:', normalizedVoteId, 'choices:', normalizedChoices);
     
-    console.log('准备调用智能合约 castVote 方法...');
-    console.log('请检查您的钱包是否弹出了交易确认窗口');
+    console.log('Preparing to call smart contract castVote method...');
+    console.log('Please check if your wallet has popped up a transaction confirmation window');
     
-    // 调用智能合约前先检查网络状态
+    // Check network status before calling smart contract
     const provider = new ethers.BrowserProvider(window.ethereum);
     const network = await provider.getNetwork();
-    console.log('当前网络:', network);
+    console.log('Current network:', network);
     
-    // 检查账户余额
+    // Check account balance
     const signer = await provider.getSigner();
     const balance = await provider.getBalance(signer.address);
-    console.log('账户余额:', ethers.formatEther(balance), 'ETH');
+    console.log('Account balance:', ethers.formatEther(balance), 'ETH');
     
-    // 设置Gas估算
+    // Set gas estimation
     let gasEstimate;
     try {
       gasEstimate = await contract.castVote.estimateGas(normalizedVoteId, normalizedChoices);
-      console.log('Gas估算:', gasEstimate.toString());
+      console.log('Gas estimation:', gasEstimate.toString());
     } catch (gasError) {
-      console.warn('Gas估算失败，使用默认值:', gasError);
+      console.warn('Gas estimation failed, using default value:', gasError);
     }
     
     const tx = await contract.castVote(normalizedVoteId, normalizedChoices);
-    console.log('交易已发送，等待确认... txHash:', tx.hash);
+    console.log('Transaction sent, waiting for confirmation... txHash:', tx.hash);
     
-    // 设置超时处理
+    // Set timeout handling
     const timeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('交易确认超时，请检查网络状况')), 300000) // 5分钟超时
+      setTimeout(() => reject(new Error('Transaction confirmation timeout, please check network status')), 300000) // 5 minutes timeout
     );
     
     const receipt = await Promise.race([tx.wait(), timeout]);
-    console.log('交易已确认:', receipt);
+    console.log('Transaction confirmed:', receipt);
     
     return { success: true, txHash: receipt.hash };
   } catch (error) {
-    console.error('投票失败详细错误:', error);
-    console.error('错误消息:', error.message);
-    console.error('错误代码:', error.code);
-    console.error('错误原因:', error.reason);
-    console.error('错误数据:', error.data);
+    console.error('Detailed error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error reason:', error.reason);
+    console.error('Error data:', error.data);
     
-    // 提供更详细的错误信息
-    let errorMessage = error.message || '未知错误';
+    // Provide more detailed error information
+    let errorMessage = error.message || 'Unknown error';
     
     if (error.code === 'ACTION_REJECTED') {
-      errorMessage = '用户拒绝了交易';
+      errorMessage = 'User rejected transaction';
     } else if (error.code === 'INSUFFICIENT_FUNDS') {
-      errorMessage = '余额不足支付Gas费用';
+      errorMessage = 'Insufficient funds to pay gas fees';
     } else if (error.message && error.message.includes('timeout')) {
-      errorMessage = '交易超时，请检查网络连接';
+      errorMessage = 'Transaction timeout, please check network connection';
     } else if (error.reason) {
       errorMessage = error.reason;
     } else if (error.message && error.message.includes('revert')) {
@@ -200,16 +200,16 @@ export const castVote = async (voteId, choices) => {
         errorMessage = match[1];
       }
     } else if (error.message && error.message.includes('gas')) {
-      errorMessage = 'Gas费用不足或Gas限制过低';
+      errorMessage = 'Insufficient gas or low gas limit';
     } else if (error.message && error.message.includes('nonce')) {
-      errorMessage = '交易随机数错误，请重试';
+      errorMessage = 'Transaction nonce error, please try again';
     }
     
     return { success: false, error: errorMessage };
   }
 };
 
-// 获取投票信息
+// Get vote information
 export const getVoteInfo = async (voteId) => {
   try {
     const contract = await getContract();
@@ -217,30 +217,30 @@ export const getVoteInfo = async (voteId) => {
     const voteInfo = await contract.getVoteInfo(voteId);
     const voteResults = await contract.getVoteResults(voteId);
     
-    console.log('原始合约数据 - voteInfo:', voteInfo);
-    console.log('原始投票类型:', voteInfo.voteType, '类型:', typeof voteInfo.voteType);
+    console.log('Raw contract data - voteInfo:', voteInfo);
+    console.log('Raw vote type:', voteInfo.voteType, 'type:', typeof voteInfo.voteType);
     console.log('Number(voteInfo.voteType):', Number(voteInfo.voteType));
     
-    // 获取时间戳（毫秒）
+    // Get timestamps (milliseconds)
     const startTime = Number(voteInfo.startTime) * 1000;
     const endTime = Number(voteInfo.endTime) * 1000;
     const currentTime = Date.now();
     
-    // 根据时间判断实际状态，不管合约状态如何
+    // Determine actual status based on time, regardless of contract status
     let actualStatus;
     const contractStatus = ['active', 'ended', 'cancelled'][voteInfo.status];
     
-    if (voteInfo.status === 2) { // 合约状态为cancelled
+    if (voteInfo.status === 2) { // Contract status is cancelled
       actualStatus = 'cancelled';
-    } else if (voteInfo.status === 1) { // 合约状态为ended
+    } else if (voteInfo.status === 1) { // Contract status is ended
       actualStatus = 'ended';
-    } else { // 合约状态为active (0) 或其他
+    } else { // Contract status is active (0) or other
       if (currentTime < startTime) {
-        actualStatus = 'pending'; // 未开始
+        actualStatus = 'pending'; // Not started
       } else if (currentTime > endTime) {
-        actualStatus = 'ended'; // 已结束
+        actualStatus = 'ended'; // Ended
       } else {
-        actualStatus = 'active'; // 进行中
+        actualStatus = 'active'; // Active
       }
     }
     
@@ -250,8 +250,8 @@ export const getVoteInfo = async (voteId) => {
       description: voteInfo.description,
       options: voteInfo.options,
       voteType: Number(voteInfo.voteType) === 0 ? 'single' : 'multi',
-      status: actualStatus, // 使用基于时间判断的实际状态
-      contractStatus: contractStatus, // 保留原始合约状态供调试使用
+      status: actualStatus, // Use actual status based on time
+      contractStatus: contractStatus, // Keep original contract status for debugging
       creator: voteInfo.creator,
       startTime: startTime,
       endTime: endTime,
@@ -260,21 +260,21 @@ export const getVoteInfo = async (voteId) => {
       results: voteResults.map(count => Number(count))
     };
     
-    console.log('处理后的数据:', processedData);
-    console.log('处理后的投票类型:', processedData.voteType);
-    console.log('处理后的投票状态:', processedData.status, '(原合约状态:', contractStatus, ')');
+    console.log('Processed data:', processedData);
+    console.log('Processed vote type:', processedData.voteType);
+    console.log('Processed vote status:', processedData.status, '(Original contract status:', contractStatus, ')');
     
     return {
       success: true,
       data: processedData
     };
   } catch (error) {
-    console.error('获取投票信息失败:', error);
+    console.error('Failed to get vote information:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 获取所有投票ID
+// Get all vote IDs
 export const getAllVoteIds = async () => {
   try {
     const contract = await getContract();
@@ -285,12 +285,12 @@ export const getAllVoteIds = async () => {
       data: voteIds.map(id => id.toString())
     };
   } catch (error) {
-    console.error('获取投票ID列表失败:', error);
+    console.error('Failed to get vote ID list:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 获取用户创建的投票
+// Get user created votes
 export const getUserCreatedVotes = async (userAddress) => {
   try {
     const contract = await getContract();
@@ -301,12 +301,12 @@ export const getUserCreatedVotes = async (userAddress) => {
       data: voteIds.map(id => id.toString())
     };
   } catch (error) {
-    console.error('获取用户创建的投票失败:', error);
+    console.error('Failed to get user created votes:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 获取用户参与的投票
+// Get user participated votes
 export const getUserParticipatedVotes = async (userAddress) => {
   try {
     const contract = await getContract();
@@ -317,12 +317,12 @@ export const getUserParticipatedVotes = async (userAddress) => {
       data: voteIds.map(id => id.toString())
     };
   } catch (error) {
-    console.error('获取用户参与的投票失败:', error);
+    console.error('Failed to get user participated votes:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 检查用户是否已投票
+// Check if user has voted
 export const hasUserVoted = async (voteId, userAddress) => {
   try {
     const contract = await getContract();
@@ -330,12 +330,12 @@ export const hasUserVoted = async (voteId, userAddress) => {
     const hasVoted = await contract.hasUserVoted(voteId, userAddress);
     return { success: true, data: hasVoted };
   } catch (error) {
-    console.error('检查用户投票状态失败:', error);
+    console.error('Failed to check user vote status:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 获取用户投票选择
+// Get user vote choices
 export const getUserVoteChoices = async (voteId, userAddress) => {
   try {
     const contract = await getContract();
@@ -346,12 +346,12 @@ export const getUserVoteChoices = async (voteId, userAddress) => {
       data: choices.map(choice => Number(choice))
     };
   } catch (error) {
-    console.error('获取用户投票选择失败:', error);
+    console.error('Failed to get user vote choices:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 检查用户是否可以投票
+// Check if user can vote
 export const canUserVote = async (voteId, userAddress) => {
   try {
     const contract = await getContract();
@@ -359,12 +359,12 @@ export const canUserVote = async (voteId, userAddress) => {
     const canVote = await contract.canUserVote(voteId, userAddress);
     return { success: true, data: canVote };
   } catch (error) {
-    console.error('检查用户投票权限失败:', error);
+    console.error('Failed to check user vote permission:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 结束投票
+// End vote
 export const endVote = async (voteId) => {
   try {
     const contract = await getContractWithSigner();
@@ -374,12 +374,12 @@ export const endVote = async (voteId) => {
     
     return { success: true, txHash: receipt.hash };
   } catch (error) {
-    console.error('结束投票失败:', error);
+    console.error('Failed to end vote:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 取消投票
+// Cancel vote
 export const cancelVote = async (voteId) => {
   try {
     const contract = await getContractWithSigner();
@@ -389,12 +389,12 @@ export const cancelVote = async (voteId) => {
     
     return { success: true, txHash: receipt.hash };
   } catch (error) {
-    console.error('取消投票失败:', error);
+    console.error('Failed to cancel vote:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 自动结束过期的投票
+// Auto end expired votes
 export const autoEndExpiredVotes = async () => {
   try {
     const contract = await getContractWithSigner();
@@ -404,45 +404,45 @@ export const autoEndExpiredVotes = async () => {
     
     return { success: true, txHash: receipt.hash };
   } catch (error) {
-    console.error('自动结束过期投票失败:', error);
+    console.error('Failed to auto end expired votes:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 工具函数：格式化错误消息
+// Utility function: format error message
 export const formatContractError = (error) => {
   if (error.code === 'ACTION_REJECTED') {
-    return '用户拒绝了交易';
+    return 'User rejected transaction';
   }
   
   if (error.code === 'INSUFFICIENT_FUNDS') {
-    return '余额不足';
+    return 'Insufficient funds';
   }
   
   if (error.message.includes('revert')) {
-    // 提取revert原因
+    // Extract revert reason
     const revertMatch = error.message.match(/revert (.+)/);
     if (revertMatch) {
       return revertMatch[1];
     }
   }
   
-  return error.message || '未知错误';
+  return error.message || 'Unknown error';
 };
 
-// 工具函数：等待交易确认
+// Utility function: wait for transaction confirmation
 export const waitForTransaction = async (txHash, confirmations = 1) => {
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const receipt = await provider.waitForTransaction(txHash, confirmations);
     return { success: true, receipt };
   } catch (error) {
-    console.error('等待交易确认失败:', error);
+    console.error('Failed to wait for transaction confirmation:', error);
     return { success: false, error: error.message };
   }
 };
 
-// 工具函数：获取网络信息
+// Utility function: get network information
 export const getNetworkInfo = async () => {
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -457,7 +457,7 @@ export const getNetworkInfo = async () => {
       }
     };
   } catch (error) {
-    console.error('获取网络信息失败:', error);
+    console.error('Failed to get network information:', error);
     return { success: false, error: error.message };
   }
 }; 
